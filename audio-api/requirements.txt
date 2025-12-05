@@ -1,7 +1,9 @@
 fastapi
-uvicorn
-librosa
+uvicorn[standard]
+
 numpy
-pyloudnorm
 scipy
+librosa
 soundfile
+
+python-multipart
