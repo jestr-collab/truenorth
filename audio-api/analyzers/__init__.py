@@ -1,4 +1,5 @@
 # analyzers/__init__.py
+from .spatial_fingerprint import compute_spatial_fingerprint_from_path as compute_spatial_fingerprint
 
 from .lufs import compute_lufs
 from .crest import compute_crest_factor_over_time
@@ -14,4 +15,5 @@ __all__ = [
     "compute_brightness_over_time",
     "compute_low_end_over_time",
     "compute_stereo_width_over_time",
+    "compute_spatial_fingerprint",
 ]

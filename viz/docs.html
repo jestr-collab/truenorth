@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Documentation - Mix Affinity</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+      :root {
+        --bg-primary: #ffffff;
+        --bg-secondary: #fafafa;
+        --bg-tertiary: #f5f5f5;
+        --bg-card: #ffffff;
+        --bg-hover: #f0f0f0;
+        --text-primary: #0a0a0a;
+        --text-secondary: #6b7280;
+        --text-tertiary: #9ca3af;
+        --border: #e5e7eb;
+        --border-hover: #d1d5db;
+        --accent: #008080;
+        --accent-hover: #006666;
+        --accent-light: rgba(0, 128, 128, 0.1);
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html, body {
+        height: 100%;
+        font-family: 'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'SF Pro Display', Roboto, 'Helvetica Neue', sans-serif;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+        font-feature-settings: "kern" 1, "liga" 1;
+        line-height: 1.6;
+        letter-spacing: -0.01em;
+        font-weight: 400;
+      }
+
+      /* Layout */
+      .page-container {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .content-header {
+        padding: 16px 40px;
+        background: var(--bg-primary);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        max-width: 1200px;
+      }
+
+      .header-left {
+        flex: 1;
+      }
+
+      .content-header h1 {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+      }
+
+      .content-header p {
+        font-size: 13px;
+        color: var(--text-secondary);
+        letter-spacing: -0.01em;
+        line-height: 1.5;
+        font-weight: 400;
+      }
+
+      .header-nav {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+      }
+
+      .header-nav a {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        text-decoration: none;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        letter-spacing: -0.01em;
+        line-height: 1.4;
+        position: relative;
+        padding: 4px 0;
+      }
+
+      .header-nav a::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 0;
+        height: 2px;
+        background: var(--accent);
+        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .header-nav a:hover::after {
+        width: 100%;
+      }
+
+      .header-nav a:hover {
+        color: var(--text-primary);
+        transform: translateY(-1px);
+      }
+
+      .header-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .content-body {
+        flex: 1;
+        padding: 60px 40px;
+        max-width: 1200px;
+        width: 100%;
+        margin: 0 auto;
+      }
+
+      .docs-header {
+        margin-bottom: 48px;
+        text-align: center;
+      }
+
+      .docs-title {
+        font-size: 42px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 16px;
+        letter-spacing: -0.02em;
+        line-height: 1.1;
+      }
+
+      .docs-subtitle {
+        font-size: 18px;
+        color: var(--text-secondary);
+        letter-spacing: -0.01em;
+        line-height: 1.5;
+        max-width: 700px;
+        margin: 0 auto;
+      }
+
+      .feature-section {
+        margin-bottom: 64px;
+      }
+
+      .feature-section:last-child {
+        margin-bottom: 0;
+      }
+
+      .feature-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 2px solid var(--border);
+      }
+
+      .feature-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: var(--accent-light);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        flex-shrink: 0;
+      }
+
+      .feature-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text-primary);
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+      }
+
+      .feature-description {
+        font-size: 16px;
+        color: var(--text-secondary);
+        line-height: 1.7;
+        letter-spacing: -0.01em;
+        margin-bottom: 32px;
+        max-width: 800px;
+      }
+
+      .feature-details {
+        background: var(--bg-card);
+        border: 1.5px solid var(--border);
+        border-radius: 16px;
+        padding: 32px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      }
+
+      .feature-details h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 16px;
+        letter-spacing: -0.015em;
+        line-height: 1.3;
+      }
+
+      .feature-details p {
+        font-size: 15px;
+        color: var(--text-secondary);
+        line-height: 1.7;
+        letter-spacing: -0.01em;
+        margin-bottom: 20px;
+      }
+
+      .feature-details p:last-child {
+        margin-bottom: 0;
+      }
+
+      .feature-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .feature-list li {
+        font-size: 15px;
+        color: var(--text-secondary);
+        line-height: 1.7;
+        letter-spacing: -0.01em;
+        padding: 12px 0;
+        padding-left: 24px;
+        position: relative;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .feature-list li:last-child {
+        border-bottom: none;
+      }
+
+      .feature-list li::before {
+        content: '→';
+        position: absolute;
+        left: 0;
+        color: var(--accent);
+        font-weight: 600;
+      }
+
+      /* Buttons */
+      .btn {
+        padding: 12px 24px;
+        font-size: 14px;
+        font-weight: 600;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        letter-spacing: -0.01em;
+        line-height: 1.4;
+        font-family: 'DM Sans', 'Inter', sans-serif;
+        position: relative;
+        overflow: hidden;
+        text-decoration: none;
+      }
+
+      .btn-primary {
+        background: var(--accent);
+        color: white;
+        box-shadow: 0 2px 6px rgba(0, 128, 128, 0.25);
+      }
+
+      .btn-primary:hover:not(:disabled) {
+        background: var(--accent-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 128, 128, 0.35);
+      }
+
+      .btn-secondary {
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        border: 1.5px solid var(--border);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      }
+
+      .btn-secondary:hover {
+        background: var(--bg-hover);
+        border-color: var(--border-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        .content-body {
+          padding: 40px 24px;
+        }
+
+        .content-header {
+          padding: 24px;
+        }
+
+        .header-top {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 16px;
+        }
+
+        .header-nav {
+          gap: 20px;
+          flex-wrap: wrap;
+          justify-content: center;
+        }
+
+        .docs-title {
+          font-size: 32px;
+        }
+
+        .docs-subtitle {
+          font-size: 16px;
+        }
+
+        .feature-title {
+          font-size: 24px;
+        }
+
+        .feature-details {
+          padding: 24px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-container">
+      <!-- Header -->
+      <div class="content-header">
+        <div class="header-top">
+          <div class="header-left">
+            <h1><a href="index.html" style="text-decoration: none; color: inherit;">Mix Affinity</a></h1>
+            <p>Audio Analysis Documentation</p>
+          </div>
+          <div class="header-actions">
+            <a href="index.html" class="btn btn-secondary">Back to Dashboard</a>
+          </div>
+        </div>
+        <nav class="header-nav">
+          <a href="index.html">Home</a>
+          <a href="docs.html" style="color: var(--text-primary);">Documentation</a>
+          <a href="#pricing">Pricing</a>
+          <a href="#about">About Us</a>
+        </nav>
+      </div>
+
+      <!-- Main Content -->
+      <div class="content-body">
+        <div class="docs-header">
+          <h1 class="docs-title">Documentation</h1>
+          <p class="docs-subtitle">
+            Comprehensive guide to all features and capabilities of Mix Affinity. 
+            Learn how to analyze your audio and interpret the results.
+          </p>
+        </div>
+
+        <!-- Spatial Fingerprint -->
+        <section id="spatial-fingerprint" class="feature-section">
+          <div class="feature-header">
+            <div class="feature-icon">📍</div>
+            <h2 class="feature-title">Spatial Fingerprint</h2>
+          </div>
+          <p class="feature-description">
+            The Spatial Fingerprint visualization provides a comprehensive view of how audio events are positioned 
+            in the stereo field and their perceptual presence. This feature helps you understand the spatial 
+            characteristics of your mix at a glance.
+          </p>
+          <div class="feature-details">
+            <h3>Understanding the Visualization</h3>
+            <p>
+              The Spatial Fingerprint displays each audio event as a point on a two-dimensional plane. 
+              The X-axis represents the stereo field (left to right balance), while the Y-axis represents 
+              the presence or forwardness of the event in the mix.
+            </p>
+            <h3>Key Features</h3>
+            <ul class="feature-list">
+              <li>Interactive region selection: Click and drag to select areas of interest</li>
+              <li>Frequency emphasis visualization: Color coding shows low, mid, and high frequency dominance</li>
+              <li>Track vs Reference comparison: Toggle between your track and reference to spot differences</li>
+              <li>Statistical analysis: View counts and averages for selected regions</li>
+              <li>Time-based filtering: Use the time scrubber to focus on specific sections</li>
+            </ul>
+            <h3>How to Use</h3>
+            <p>
+              Upload your main track and optionally a reference track. After analysis, the Spatial Fingerprint 
+              will display all detected audio events. Select regions to see detailed statistics, and compare 
+              your mix against the reference to identify spatial differences.
+            </p>
+          </div>
+        </section>
+
+        <!-- Loudness Analysis -->
+        <section id="loudness-analysis" class="feature-section">
+          <div class="feature-header">
+            <div class="feature-icon">🔊</div>
+            <h2 class="feature-title">Loudness Analysis</h2>
+          </div>
+          <p class="feature-description">
+            Loudness analysis measures the perceived loudness of your audio over time using LUFS (Loudness Units 
+            relative to Full Scale). This helps ensure your mix meets broadcast standards and maintains consistent 
+            perceived volume.
+          </p>
+          <div class="feature-details">
+            <h3>Understanding LUFS</h3>
+            <p>
+              LUFS is an industry-standard measurement that accounts for human perception of loudness, unlike 
+              simple peak or RMS measurements. It provides a more accurate representation of how loud your audio 
+              actually sounds to listeners.
+            </p>
+            <h3>Key Features</h3>
+            <ul class="feature-list">
+              <li>Integrated LUFS: Overall loudness measurement for the entire track</li>
+              <li>Short-term LUFS: Dynamic loudness changes throughout the track</li>
+              <li>Track vs Reference comparison: Match your track's loudness to reference material</li>
+              <li>Time-based visualization: See how loudness evolves over time</li>
+              <li>Hover tooltips: Get precise LUFS values at any point in time</li>
+            </ul>
+            <h3>How to Use</h3>
+            <p>
+              After uploading your audio, the Loudness curve will display the short-term LUFS values over time. 
+              Compare with your reference track to identify sections that need adjustment. Aim for consistent 
+              loudness levels throughout your mix.
+            </p>
+          </div>
+        </section>
+
+        <!-- Crest Factor -->
+        <section id="crest-factor" class="feature-section">
+          <div class="feature-header">
+            <div class="feature-icon">📊</div>
+            <h2 class="feature-title">Crest Factor</h2>
+          </div>
+          <p class="feature-description">
+            Crest factor measures the ratio between peak and RMS levels, indicating the dynamic range and 
+            transient content of your audio. Higher crest factors suggest more punch and less compression, 
+            while lower values indicate a more compressed, squashed sound.
+          </p>
+          <div class="feature-details">
+            <h3>Understanding Crest Factor</h3>
+            <p>
+              Crest factor is calculated as the difference between peak and RMS levels in decibels. A high 
+              crest factor means your audio has strong transients and dynamic range, while a low crest factor 
+              indicates heavy compression or limiting has been applied.
+            </p>
+            <h3>Key Features</h3>
+            <ul class="feature-list">
+              <li>Real-time crest visualization: See crest factor changes throughout your track</li>
+              <li>Punch measurement: Additional metric showing transient contrast</li>
+              <li>Track vs Reference comparison: Identify if your mix is over-compressed</li>
+              <li>Time-based analysis: Pinpoint sections with different dynamic characteristics</li>
+              <li>Interactive tooltips: View exact crest and punch values at any time point</li>
+            </ul>
+            <h3>How to Use</h3>
+            <p>
+              Use the Crest visualization to ensure your mix maintains appropriate dynamic range. Compare 
+              against your reference to see if you've over-compressed. Sections with very low crest factors 
+              may sound lifeless and lack punch.
+            </p>
+          </div>
+        </section>
+
+        <!-- Low End Analysis -->
+        <section id="low-end-analysis" class="feature-section">
+          <div class="feature-header">
+            <div class="feature-icon">🎵</div>
+            <h2 class="feature-title">Low End Analysis</h2>
+          </div>
+          <p class="feature-description">
+            Low End analysis tracks the low-frequency energy in your mix over time. This helps identify boomy 
+            sections, weak bass areas, and ensures proper low-end balance throughout your track.
+          </p>
+          <div class="feature-details">
+            <h3>Understanding Low End Energy</h3>
+            <p>
+              Low end energy is measured in the sub-bass and bass frequency ranges. This visualization shows 
+              how low-frequency content varies throughout your track, helping you maintain consistent bass 
+              presence and avoid muddiness or weak sections.
+            </p>
+            <h3>Key Features</h3>
+            <ul class="feature-list">
+              <li>Normalized low-end energy: Values range from 0 to 1 for easy comparison</li>
+              <li>Time-based visualization: See how bass energy evolves throughout the track</li>
+              <li>Track vs Reference comparison: Match low-end levels to your reference</li>
+              <li>Hover tooltips: Get precise low-end values at any point in time</li>
+              <li>Smooth curve visualization: Easy to spot trends and problem areas</li>
+            </ul>
+            <h3>How to Use</h3>
+            <p>
+              After analysis, review the Low End curve to identify sections with excessive or insufficient 
+              bass. Compare with your reference track to ensure consistent low-end balance. Look for sudden 
+              spikes that might indicate boomy frequencies or drops that suggest weak bass.
+            </p>
+          </div>
+        </section>
+
+        <!-- Getting Started -->
+        <section class="feature-section">
+          <div class="feature-header">
+            <div class="feature-icon">🚀</div>
+            <h2 class="feature-title">Getting Started</h2>
+          </div>
+          <p class="feature-description">
+            New to Mix Affinity? Follow these steps to get the most out of your audio analysis.
+          </p>
+          <div class="feature-details">
+            <h3>Quick Start Guide</h3>
+            <ul class="feature-list">
+              <li>Upload your main track: Select a WAV file to analyze</li>
+              <li>Add a reference (optional): Compare against a professional mix</li>
+              <li>Name your session: Give your analysis a descriptive name</li>
+              <li>Click Analyze: Wait for processing to complete</li>
+              <li>Explore visualizations: Switch between different analysis views</li>
+              <li>Compare Track vs Reference: Toggle between your mix and reference</li>
+              <li>Select regions: Click and drag on Spatial Fingerprint to see statistics</li>
+            </ul>
+            <h3>Best Practices</h3>
+            <p>
+              For best results, use high-quality WAV files at 44.1kHz or higher. Reference tracks should be 
+              professionally mixed and mastered material in a similar genre. Take time to understand each 
+              visualization and how it relates to your mix decisions.
+            </p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </body>
+</html>

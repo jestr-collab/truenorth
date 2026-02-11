@@ -61,15 +61,29 @@ def compute_lufs(
     hop_samples = int(hop_sec * sr)
 
     points = []
+    # RMS gate: below this we set lufs to null (avoids end-of-track spike from near-silent window)
+    min_rms = 1e-5
+    # Clamp short-term LUFS to sane range so numerical glitches don't show as spikes
+    min_lufs, max_lufs = -70.0, 0.0
+    # Trim tail: exclude last 100ms from plotted series to avoid edge/partial frames
+    trim_tail_sec = 0.1
+
     if window_samples > 0 and hop_samples > 0 and window_samples <= y.size:
         start = 0
         while start + window_samples <= y.size:
             frame = y[start:start + window_samples]
 
-            # Skip completely silent frames
-            if np.any(frame):
+            frame_rms = float(np.sqrt(np.mean(frame ** 2)))
+            # RMS gate: near-silent frames -> null
+            if frame_rms < min_rms:
+                frame_lufs = None
+            elif np.any(frame):
                 try:
                     frame_lufs = float(meter.integrated_loudness(frame))
+                    if np.isfinite(frame_lufs):
+                        frame_lufs = float(np.clip(frame_lufs, min_lufs, max_lufs))
+                    else:
+                        frame_lufs = None
                 except Exception:
                     frame_lufs = None
             else:
@@ -84,6 +98,20 @@ def compute_lufs(
             )
 
             start += hop_samples
+
+    # Sanitize: replace non-finite numerics with None before JSON
+    def _sanitize_point(p):
+        out = {"time": p["time"], "lufs": p["lufs"]}
+        for k in list(out.keys()):
+            if out[k] is not None and isinstance(out[k], (int, float)) and not np.isfinite(out[k]):
+                out[k] = None
+        return out
+
+    points = [_sanitize_point(p) for p in points]
+    # Trim tail: drop last ~100ms
+    duration_sec = y.size / sr
+    trim_time = duration_sec - trim_tail_sec
+    points = [p for p in points if p["time"] <= trim_time]
 
     short_term = {
         "window_sec": float(window_sec),

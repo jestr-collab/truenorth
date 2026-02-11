@@ -1,11 +1,19 @@
-from typing import Optional
-
+from typing import Optional, Any
 import os
 import tempfile
+import traceback
+import math
+import json
+import time
 
 import librosa
 import numpy as np
 from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
+from fastapi.middleware.cors import CORSMiddleware
+
+from analyzers.spatial_fingerprint import DEFAULT_FP_SETTINGS
 
 from analyzers import (
     compute_lufs,
@@ -14,9 +22,21 @@ from analyzers import (
     compute_brightness_over_time,
     compute_low_end_over_time,
     compute_stereo_width_over_time,
+    compute_spatial_fingerprint,
 )
 
 app = FastAPI()
+
+# Add CORS middleware to allow cross-origin requests.
+# allow_credentials=False is required when allow_origins=["*"] (browser CORS rule).
+# For auth/cookies, set allow_origins to explicit frontend URLs and allow_credentials=True.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/")
@@ -38,14 +58,14 @@ async def run_all_analyzers(upload_file: UploadFile) -> dict:
             detail="Please upload a WAV/FLAC/OGG file for now (we'll add MP3/M4A support later).",
         )
 
-    # 1) Save to a temp path
+    # Save to a temp path
     with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
         tmp_path = tmp.name
         content = await upload_file.read()
         tmp.write(content)
 
     try:
-        # 2) Load audio (mono=False so we can compute stereo width)
+        # Load audio (mono=False so we can compute stereo width)
         try:
             y, sr = librosa.load(tmp_path, sr=None, mono=False)
         except Exception as e:
@@ -64,12 +84,12 @@ async def run_all_analyzers(upload_file: UploadFile) -> dict:
 
         duration = librosa.get_duration(y=y_mono, sr=sr)
 
-        # 3) Run all your existing analyzers
+        # Run existing analyzers
         lufs = compute_lufs(y_mono, sr)
         crest = compute_crest_factor_over_time(y_mono, sr)
         transients = compute_transient_density(y_mono, sr)
         brightness = compute_brightness_over_time(y_mono, sr)
-        low_end = compute_low_end_over_time(y_mono, sr)
+        low_end = compute_low_end_over_time(y, sr)  # Pass stereo y for width computation
         width = compute_stereo_width_over_time(y, sr)
 
         features = {
@@ -81,9 +101,6 @@ async def run_all_analyzers(upload_file: UploadFile) -> dict:
             "width": width,
         }
 
-        # DEBUG: see what keys the backend thinks it’s returning
-        print("DEBUG FEATURES KEYS:", list(features.keys()))
-
         return {
             "filename": filename,
             "sample_rate": int(sr),
@@ -91,7 +108,6 @@ async def run_all_analyzers(upload_file: UploadFile) -> dict:
             "features": features,
         }
     finally:
-        # 4) Clean up temp file
         try:
             os.remove(tmp_path)
         except OSError:
@@ -105,15 +121,208 @@ async def analyze(
     main_file: UploadFile = File(...),
     ref_file: Optional[UploadFile] = File(None),
 ):
-    # always analyze the main file
     main_result = await run_all_analyzers(main_file)
 
-    # analyze reference if provided
     ref_result = None
     if ref_file is not None:
         ref_result = await run_all_analyzers(ref_file)
 
-    return {
-        "main": main_result,
-        "reference": ref_result,
-    }
+    payload = {"main": main_result, "reference": ref_result}
+    payload = sanitize_for_json(payload)
+    return JSONResponse(content=jsonable_encoder(payload))
+
+
+@app.post("/analyze/summary")
+async def analyze_summary(
+    main_file: UploadFile = File(...),
+    ref_file: Optional[UploadFile] = File(None),
+):
+    main_result = await run_all_analyzers(main_file)
+    ref_result = None
+    if ref_file is not None:
+        ref_result = await run_all_analyzers(ref_file)
+
+    def summarize(track):
+        if not track:
+            return None
+        f = track.get("features", {})
+        return {
+            "filename": track.get("filename"),
+            "sample_rate": track.get("sample_rate"),
+            "duration_sec": track.get("duration_sec"),
+            "lufs_integrated": (f.get("lufs") or {}).get("integrated"),
+            "crest_stats": (f.get("crest") or {}).get("stats")
+            if isinstance(f.get("crest"), dict)
+            else None,
+        }
+
+    payload = {"main": summarize(main_result), "reference": summarize(ref_result)}
+    payload = sanitize_for_json(payload)
+    return JSONResponse(content=jsonable_encoder(payload))
+
+
+# ---------- Spatial Fingerprint endpoint ----------
+
+def sanitize_for_json(payload: Any, path: str = "", non_finite_paths: list = None) -> Any:
+    """
+    Recursively replace non-finite floats (NaN, Inf, -Inf) with None.
+    Tracks first 10 non-finite paths encountered.
+    """
+    if non_finite_paths is None:
+        non_finite_paths = []
+    
+    if isinstance(payload, dict):
+        return {k: sanitize_for_json(v, f"{path}.{k}" if path else k, non_finite_paths) for k, v in payload.items()}
+    elif isinstance(payload, list):
+        return [sanitize_for_json(item, f"{path}[{i}]" if path else f"[{i}]", non_finite_paths) for i, item in enumerate(payload)]
+    elif isinstance(payload, (float, np.floating)):
+        val = float(payload)
+        if not math.isfinite(val):
+            if len(non_finite_paths) < 10:
+                non_finite_paths.append(f"{path}={val}")
+            return None
+        return val
+    elif isinstance(payload, (int, np.integer)):
+        return int(payload)
+    else:
+        return payload
+
+
+@app.post("/spatial-fingerprint")
+async def spatial_fingerprint(
+    main_file: UploadFile = File(...),
+    ref_file: Optional[UploadFile] = File(None),
+    max_events: int = 250,
+):
+    """
+    WAV-only. Returns normalized 'Spatial Fingerprint' events for main + optional reference.
+    Adds LUFS + CREST under track/features and reference/features.
+    """
+    try:
+        # WAV-only enforcement
+        def _require_wav(upload: UploadFile) -> str:
+            filename = upload.filename or ""
+            ext = os.path.splitext(filename)[1].lower()
+            if ext != ".wav":
+                raise HTTPException(
+                    status_code=400,
+                    detail="Spatial Fingerprint currently supports WAV only.",
+                )
+            return filename
+
+        main_name = _require_wav(main_file)
+
+        ref_name = None
+        if ref_file is not None and (ref_file.filename or "") != "":
+            ref_name = _require_wav(ref_file)
+
+        settings = dict(DEFAULT_FP_SETTINGS)
+        settings["max_events"] = int(max_events)
+
+        # Save main to temp
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_main:
+            main_path = tmp_main.name
+            tmp_main.write(await main_file.read())
+
+        # Save ref to temp (optional)
+        ref_path = None
+        if ref_name:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_ref:
+                ref_path = tmp_ref.name
+                tmp_ref.write(await ref_file.read())
+
+        try:
+            # --- compute fingerprint(s) ---
+            main_fp = compute_spatial_fingerprint(
+                main_path,
+                filename=main_name,
+                settings=settings,
+            )
+
+            ref_fp = None
+            if ref_path:
+                ref_fp = compute_spatial_fingerprint(
+                    ref_path,
+                    filename=ref_name,
+                    settings=settings,
+                )
+
+            # --- compute LUFS + CREST + LOW_END ---
+            # Load stereo for low_end (needs width), then create mono for lufs/crest
+            y_main_stereo, sr_main = librosa.load(main_path, sr=None, mono=False)
+            y_main_stereo = np.asarray(y_main_stereo, dtype=float)
+            y_main_mono = np.mean(y_main_stereo, axis=0) if y_main_stereo.ndim > 1 else y_main_stereo
+            
+            main_lufs = compute_lufs(y_main_mono, sr_main)
+            main_crest = compute_crest_factor_over_time(y_main_mono, sr_main)
+            main_low_end = compute_low_end_over_time(y_main_stereo, sr_main)
+
+            ref_lufs = None
+            ref_crest = None
+            ref_low_end = None
+            if ref_path:
+                y_ref_stereo, sr_ref = librosa.load(ref_path, sr=None, mono=False)
+                y_ref_stereo = np.asarray(y_ref_stereo, dtype=float)
+                y_ref_mono = np.mean(y_ref_stereo, axis=0) if y_ref_stereo.ndim > 1 else y_ref_stereo
+                
+                ref_lufs = compute_lufs(y_ref_mono, sr_ref)
+                ref_crest = compute_crest_factor_over_time(y_ref_mono, sr_ref)
+                ref_low_end = compute_low_end_over_time(y_ref_stereo, sr_ref)
+
+            # --- attach features inside "features" without breaking existing keys ---
+            payload = {
+                "version": "spatial-fingerprint/v1",
+                "settings": settings,
+                "track": {
+                    **main_fp,
+                    "features": {
+                        **(main_fp.get("features") or {}),
+                        "lufs": main_lufs,
+                        "crest": main_crest,
+                        "low_end": main_low_end,
+                    },
+                },
+                "reference": None
+                if ref_fp is None
+                else {
+                    **ref_fp,
+                    "features": {
+                        **(ref_fp.get("features") or {}),
+                        "lufs": ref_lufs,
+                        "crest": ref_crest,
+                        "low_end": ref_low_end,
+                    },
+                },
+            }
+            
+            # Sanitize non-finite floats before JSON encoding
+            non_finite_paths = []
+            payload = sanitize_for_json(payload, non_finite_paths=non_finite_paths)
+            
+            # Debug: print first 10 non-finite paths encountered
+            if non_finite_paths:
+                print(f"[spatial-fingerprint] Found {len(non_finite_paths)} non-finite value(s):")
+                for path in non_finite_paths[:10]:
+                    print(f"  {path}")
+            
+            return JSONResponse(content=jsonable_encoder(payload))
+
+        finally:
+            for p in [main_path, ref_path]:
+                if p:
+                    try:
+                        os.remove(p)
+                    except OSError:
+                        pass
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        # Return full error so Swagger shows it (temporary but useful)
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": str(e),
+                "traceback": traceback.format_exc(),
+            },
+        )

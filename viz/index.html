@@ -1,0 +1,1348 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>TrueNorth Dashboard</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+      :root {
+        --bg-primary: #ffffff;
+        --bg-secondary: #fafafa;
+        --bg-tertiary: #f5f5f5;
+        --bg-card: #ffffff;
+        --bg-hover: #f0f0f0;
+        --text-primary: #0a0a0a;
+        --text-secondary: #6b7280;
+        --text-tertiary: #9ca3af;
+        --border: #e5e7eb;
+        --border-hover: #d1d5db;
+        --accent: #008080;
+        --accent-hover: #006666;
+        --accent-light: rgba(0, 128, 128, 0.1);
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      /* Universal Typography Enhancements */
+      h1, h2, h3, h4, h5, h6, p, span, a, button, input, textarea, label, div {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+      }
+
+      /* Premium subtle animations */
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .card, .feature-block, .session-item {
+        animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+      }
+
+      .feature-block:nth-child(1) { animation-delay: 0.1s; }
+      .feature-block:nth-child(2) { animation-delay: 0.2s; }
+      .feature-block:nth-child(3) { animation-delay: 0.3s; }
+      .feature-block:nth-child(4) { animation-delay: 0.4s; }
+
+      html, body {
+        height: 100%;
+        font-family: 'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'SF Pro Display', Roboto, 'Helvetica Neue', sans-serif;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+        font-feature-settings: "kern" 1, "liga" 1;
+        line-height: 1.6;
+        letter-spacing: -0.01em;
+        font-weight: 400;
+      }
+
+      /* Layout */
+      .dashboard {
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      /* Main Content */
+      .main-content {
+        flex: 1;
+        width: 100%;
+        overflow-y: auto;
+        background: var(--bg-primary);
+      }
+
+      .content-header {
+        padding: 16px 40px;
+        background: var(--bg-primary);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+      }
+
+      .header-left {
+        flex: 1;
+      }
+
+      .content-header h1 {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+      }
+
+      .content-header p {
+        font-size: 13px;
+        color: var(--text-secondary);
+        letter-spacing: -0.01em;
+        line-height: 1.5;
+        font-weight: 400;
+      }
+
+      .header-nav {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+      }
+
+      .header-nav a {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        text-decoration: none;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        letter-spacing: -0.01em;
+        line-height: 1.4;
+        position: relative;
+        padding: 4px 0;
+      }
+
+      .header-nav a::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 0;
+        height: 2px;
+        background: var(--accent);
+        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .header-nav a:hover::after {
+        width: 100%;
+      }
+
+      .header-nav a:hover {
+        color: var(--text-primary);
+        transform: translateY(-1px);
+      }
+
+      .header-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .content-body {
+        padding: 40px;
+      }
+
+      /* Cards */
+      .card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 32px;
+        margin-bottom: 32px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        backdrop-filter: blur(10px);
+      }
+
+      .card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        transform: translateY(-2px);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .card-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text-primary);
+        letter-spacing: -0.015em;
+        line-height: 1.3;
+      }
+
+      /* Form Elements */
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-group:last-child {
+        margin-bottom: 0;
+      }
+
+      .form-label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        line-height: 1.4;
+      }
+
+      .form-input {
+        width: 100%;
+        padding: 14px 18px;
+        font-size: 15px;
+        background: var(--bg-tertiary);
+        border: 1.5px solid var(--border);
+        border-radius: 12px;
+        color: var(--text-primary);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        letter-spacing: -0.01em;
+        line-height: 1.5;
+        font-weight: 400;
+        font-family: 'DM Sans', 'Inter', sans-serif;
+      }
+
+      .form-input:hover {
+        border-color: var(--border-hover);
+        background: var(--bg-primary);
+      }
+
+      .session-name-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 24px;
+      }
+
+      .session-name-input {
+        max-width: 300px;
+      }
+
+      .form-input:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 4px var(--accent-light), 0 2px 8px rgba(0, 128, 128, 0.1);
+        background: var(--bg-primary);
+        transform: translateY(-1px);
+      }
+
+      .form-input::placeholder {
+        color: var(--text-tertiary);
+      }
+
+      .upload-files-row {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .upload-file-group {
+        flex: 1;
+        margin-bottom: 0;
+      }
+
+      .analyze-button-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 8px;
+        width: 100%;
+      }
+
+      .analyze-button-wrapper .btn {
+        min-width: 120px;
+        margin: 0 auto;
+      }
+
+      .file-input-wrapper {
+        position: relative;
+      }
+
+      .file-input-wrapper input[type="file"] {
+        width: 100%;
+        padding: 14px 18px;
+        font-size: 15px;
+        background: var(--bg-tertiary);
+        border: 1.5px solid var(--border);
+        border-radius: 12px;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        letter-spacing: -0.01em;
+        line-height: 1.5;
+        font-weight: 400;
+        font-family: 'DM Sans', 'Inter', sans-serif;
+      }
+
+      .file-input-wrapper input[type="file"]:hover {
+        border-color: var(--border-hover);
+        background: var(--bg-primary);
+        transform: translateY(-1px);
+      }
+
+      .file-input-wrapper input[type="file"]:hover {
+        border-color: var(--border-hover);
+      }
+
+      .file-input-wrapper input[type="file"]:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 4px var(--accent-light), 0 2px 8px rgba(0, 128, 128, 0.1);
+        background: var(--bg-primary);
+        transform: translateY(-1px);
+      }
+
+      /* Buttons */
+      .btn {
+        padding: 12px 24px;
+        font-size: 14px;
+        font-weight: 600;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        letter-spacing: -0.01em;
+        line-height: 1.4;
+        font-family: 'DM Sans', 'Inter', sans-serif;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s;
+      }
+
+      .btn:hover::before {
+        left: 100%;
+      }
+
+      .btn-primary {
+        background: var(--accent);
+        color: white;
+        box-shadow: 0 2px 6px rgba(0, 128, 128, 0.25);
+      }
+
+      .btn-primary:hover:not(:disabled) {
+        background: var(--accent-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 128, 128, 0.35);
+      }
+
+      .btn-primary:active:not(:disabled) {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(0, 128, 128, 0.2);
+      }
+
+      .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .btn-secondary {
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        border: 1.5px solid var(--border);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      }
+
+      .btn-secondary:hover {
+        background: var(--bg-hover);
+        border-color: var(--border-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Status */
+      .status {
+        margin-top: 16px;
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        text-align: center;
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        letter-spacing: -0.01em;
+        line-height: 1.5;
+      }
+
+      .status.loading {
+        background: var(--accent-light);
+        color: var(--accent);
+        font-weight: 500;
+      }
+
+      .status.error {
+        background: #fef2f2;
+        color: #dc2626;
+        border: 1px solid #fecaca;
+      }
+
+      .status.success {
+        background: #f0fdf4;
+        color: #008080;
+        border: 1px solid #bbf7d0;
+      }
+
+      .status:empty {
+        display: none;
+      }
+
+      /* Sessions List */
+      .sessions-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .session-item {
+        padding: 20px;
+        background: var(--bg-tertiary);
+        border: 1.5px solid var(--border);
+        border-radius: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+      }
+
+      .session-item:hover {
+        background: var(--bg-hover);
+        border-color: var(--accent);
+        box-shadow: 0 4px 12px rgba(0, 128, 128, 0.08);
+        transform: translateX(4px);
+      }
+
+      .session-info {
+        flex: 1;
+      }
+
+      .session-name {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 6px;
+        letter-spacing: -0.01em;
+        line-height: 1.4;
+      }
+
+      .session-meta {
+        font-size: 13px;
+        color: var(--text-secondary);
+        letter-spacing: -0.005em;
+        line-height: 1.5;
+        font-weight: 400;
+      }
+
+      .session-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .btn-icon {
+        padding: 6px;
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .btn-icon:hover {
+        background: var(--bg-hover);
+        border-color: var(--border-hover);
+        color: var(--text-primary);
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 48px 24px;
+        color: var(--text-secondary);
+      }
+
+      .empty-state-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+      }
+
+      .empty-state-text {
+        font-size: 14px;
+        letter-spacing: -0.01em;
+        line-height: 1.5;
+      }
+
+      /* Settings */
+      .settings-group {
+        margin-bottom: 32px;
+      }
+
+      .settings-group:last-child {
+        margin-bottom: 0;
+      }
+
+      .settings-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 0;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .settings-item:last-child {
+        border-bottom: none;
+      }
+
+      .settings-label {
+        font-size: 14px;
+        color: var(--text-primary);
+        letter-spacing: -0.01em;
+        line-height: 1.4;
+        font-weight: 500;
+      }
+
+      .settings-description {
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin-top: 6px;
+        letter-spacing: -0.005em;
+        line-height: 1.6;
+        font-weight: 400;
+      }
+
+      .toggle {
+        width: 44px;
+        height: 24px;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        position: relative;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .toggle.active {
+        background: var(--accent);
+        border-color: var(--accent);
+      }
+
+      .toggle::after {
+        content: '';
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        background: white;
+        border-radius: 50%;
+        top: 2px;
+        left: 2px;
+        transition: all 0.2s ease;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      .toggle.active::after {
+        left: 22px;
+      }
+
+      /* Features Section */
+      .features-section {
+        margin-top: 64px;
+        padding-top: 48px;
+        border-top: 1px solid var(--border);
+      }
+
+      .features-title {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 48px;
+        text-align: center;
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+      }
+
+      .features-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+        max-width: 1000px;
+        margin: 0 auto;
+      }
+
+      .feature-block {
+        padding: 32px;
+        background: var(--bg-card);
+        border: 1.5px solid var(--border);
+        border-radius: 16px;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .feature-block::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--accent);
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .feature-block:hover {
+        border-color: var(--accent);
+        box-shadow: 0 4px 16px rgba(0, 128, 128, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06);
+        transform: translateY(-2px);
+      }
+
+      .feature-block:hover::before {
+        transform: scaleX(1);
+      }
+
+      .feature-block h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 16px;
+        letter-spacing: -0.015em;
+        line-height: 1.3;
+      }
+
+      .feature-block p {
+        font-size: 14px;
+        line-height: 1.6;
+        color: var(--text-secondary);
+        margin: 0;
+        letter-spacing: -0.01em;
+        font-weight: 400;
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        .content-body {
+          padding: 24px;
+        }
+
+        .content-header {
+          padding: 24px;
+        }
+
+        .header-top {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 16px;
+        }
+
+        .header-nav {
+          gap: 20px;
+          flex-wrap: wrap;
+          justify-content: center;
+        }
+
+        .header-actions {
+          width: 100%;
+          justify-content: flex-end;
+        }
+
+        .features-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .features-title {
+          font-size: 24px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="dashboard">
+      <!-- Main Content -->
+      <main class="main-content">
+        <!-- Upload Section -->
+        <section id="upload-section" class="content-section">
+          <div class="content-header">
+            <div class="header-top">
+            <div class="header-left">
+              <h1>Mix Affinity</h1>
+              <p>Upload audio files and start analyzing</p>
+            </div>
+              <div class="header-actions">
+                <button class="btn btn-secondary">Sign Up</button>
+                <button class="btn btn-primary">Login</button>
+              </div>
+            </div>
+            <nav class="header-nav">
+              <a href="docs.html">Documentation</a>
+              <a href="#pricing">Pricing</a>
+              <a href="#about">About Us</a>
+            </nav>
+          </div>
+          <div class="content-body">
+            <div class="card">
+              <div class="form-group session-name-wrapper">
+                <label class="form-label" for="sessionName">Session Name <span style="color: #dc2626;">*</span></label>
+                <input 
+                  type="text" 
+                  id="sessionName" 
+                  class="form-input session-name-input" 
+                  placeholder="Enter session name"
+                  required
+                />
+              </div>
+              
+              <div class="upload-files-row">
+                <div class="form-group upload-file-group">
+                  <label class="form-label" for="mainFile">Main Track</label>
+                  <div class="file-input-wrapper">
+                    <input type="file" id="mainFile" accept=".wav" />
+                  </div>
+                </div>
+                <div class="form-group upload-file-group">
+                  <label class="form-label" for="refFile">Reference <span style="color: var(--text-tertiary); font-weight: 400;">(optional)</span></label>
+                  <div class="file-input-wrapper">
+                    <input type="file" id="refFile" accept=".wav" />
+                  </div>
+                </div>
+              </div>
+              
+              <div class="analyze-button-wrapper">
+                <button id="btnUpload" class="btn btn-primary">
+                     Analyze
+                </button>
+              </div>
+              
+              <div id="uploadStatus" class="status"></div>
+            </div>
+
+            <!-- Features Section -->
+            <div class="features-section">
+              <h2 class="features-title">Features</h2>
+              <div class="features-grid">
+                <div class="feature-block">
+                  <h3>Spatial Fingerprint</h3>
+                  <p>Visualize stereo field positioning, presence, and spatial characteristics of your audio tracks with interactive scatter plots.</p>
+                </div>
+                <div class="feature-block">
+                  <h3>Loudness Analysis</h3>
+                  <p>Measure and compare LUFS levels to ensure your tracks meet industry standards and maintain consistent loudness across your mix.</p>
+                </div>
+                <div class="feature-block">
+                  <h3>Crest Factor</h3>
+                  <p>Analyze dynamic range and peak-to-average ratios for optimal mastering decisions and better understanding of your track's dynamics.</p>
+                </div>
+                <div class="feature-block">
+                  <h3>Low-End Analysis</h3>
+                  <p>Examine sub-bass frequencies and low-end energy distribution across your tracks to ensure proper balance and clarity.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+
+    <script src="./uploadHandler.js"></script>
+    <script>
+      // Navigation removed - sidebar no longer exists
+
+      // Settings toggles
+      document.querySelectorAll('.toggle').forEach(toggle => {
+        toggle.addEventListener('click', () => {
+          toggle.classList.toggle('active');
+        });
+      });
+
+      // Load sessions from localStorage (only metadata, not full data)
+      function loadSessions() {
+        const sessionsList = document.getElementById('sessionsList');
+        
+        // Guard: if element doesn't exist, return early (this feature may not be in use)
+        if (!sessionsList) {
+          return;
+        }
+        
+        let sessions = [];
+        
+        try {
+          sessions = JSON.parse(localStorage.getItem('tn:sessions') || '[]');
+        } catch (e) {
+          console.error('Failed to load sessions:', e);
+          sessions = [];
+        }
+        
+        if (sessions.length === 0) {
+          sessionsList.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-state-icon">📊</div>
+              <div class="empty-state-text">No previous sessions found</div>
+            </div>
+          `;
+          return;
+        }
+        
+        sessionsList.innerHTML = sessions.map((session, index) => `
+          <div class="session-item" data-index="${index}">
+            <div class="session-info">
+              <div class="session-name">${session.name || 'Untitled Session'}</div>
+              <div class="session-meta">${new Date(session.date).toLocaleString()}</div>
+            </div>
+            <div class="session-actions">
+              <button class="btn-icon" onclick="loadSession('${session.id}')" title="Load">↗</button>
+              <button class="btn-icon" onclick="deleteSession('${session.id}')" title="Delete">×</button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      function loadSession(sessionId) {
+        try {
+          const data = localStorage.getItem(`tn:session:${sessionId}`);
+          if (data) {
+            localStorage.setItem('tn:lastResult', data);
+            window.location.href = 'viz.html';
+          } else {
+            alert('Session data not found');
+          }
+        } catch (e) {
+          console.error('Failed to load session:', e);
+          alert('Failed to load session data');
+        }
+      }
+
+      function deleteSession(sessionId) {
+        try {
+          // Remove from sessions list
+          let sessions = JSON.parse(localStorage.getItem('tn:sessions') || '[]');
+          sessions = sessions.filter(s => s.id !== sessionId);
+          localStorage.setItem('tn:sessions', JSON.stringify(sessions));
+          
+          // Remove the actual data
+          localStorage.removeItem(`tn:session:${sessionId}`);
+          
+          loadSessions();
+        } catch (e) {
+          console.error('Failed to delete session:', e);
+          alert('Failed to delete session');
+        }
+      }
+
+      window.loadSession = loadSession;
+      window.deleteSession = deleteSession;
+
+      // Upload handler
+      const uploadHandler = new TrueNorthUploadHandler({
+        apiBaseUrl: document.getElementById('apiEndpoint')?.value || "http://localhost:8000",
+        endpoint: "/spatial-fingerprint",
+        onLoading: (loading) => {
+          const statusEl = document.getElementById("uploadStatus");
+          const btnUpload = document.getElementById("btnUpload");
+          
+          if (statusEl) {
+            statusEl.className = loading ? "status loading" : "status";
+            statusEl.textContent = loading ? "Analyzing audio files..." : "";
+          }
+          
+          if (btnUpload) {
+            btnUpload.disabled = loading;
+            btnUpload.textContent = loading ? "Analyzing..." : "  Analyze";
+          }
+        },
+        onSuccess: (data) => {
+          let dataString;
+          try {
+            dataString = JSON.stringify(data);
+          } catch (e) {
+            console.error('Failed to stringify data:', e);
+            alert(`Error: Could not process analysis data. ${e.message}`);
+            return;
+          }
+          
+          // Calculate payload size for downsampling check
+          let payloadSizeMB = new Blob([dataString]).size / (1024 * 1024);
+          
+          // Helper function to downsample arrays (events or time-series points)
+          function downsampleArray(arr, targetCount) {
+            if (!arr || arr.length <= targetCount) return arr;
+            const step = Math.ceil(arr.length / targetCount);
+            const downsampled = [];
+            for (let i = 0; i < arr.length; i += step) {
+              downsampled.push(arr[i]);
+            }
+            return downsampled;
+          }
+          
+          // Apply downsampling to a clone; returns new data and new size in MB
+          function applyDownsample(src, maxPointsPerCurve, targetEventsPerTrack) {
+            const clone = JSON.parse(JSON.stringify(src));
+            
+            if (clone.track?.features?.crest?.points) {
+              clone.track.features.crest.points = downsampleArray(clone.track.features.crest.points, maxPointsPerCurve);
+            }
+            if (clone.track?.features?.low_end?.points) {
+              clone.track.features.low_end.points = downsampleArray(clone.track.features.low_end.points, maxPointsPerCurve);
+            }
+            if (clone.track?.features?.lufs?.short_term?.points) {
+              clone.track.features.lufs.short_term.points = downsampleArray(clone.track.features.lufs.short_term.points, maxPointsPerCurve);
+            }
+            if (clone.reference?.features?.crest?.points) {
+              clone.reference.features.crest.points = downsampleArray(clone.reference.features.crest.points, maxPointsPerCurve);
+            }
+            if (clone.reference?.features?.low_end?.points) {
+              clone.reference.features.low_end.points = downsampleArray(clone.reference.features.low_end.points, maxPointsPerCurve);
+            }
+            if (clone.reference?.features?.lufs?.short_term?.points) {
+              clone.reference.features.lufs.short_term.points = downsampleArray(clone.reference.features.lufs.short_term.points, maxPointsPerCurve);
+            }
+            
+            if (clone.track?.spatial_fingerprint?.events) {
+              clone.track.spatial_fingerprint.events = downsampleArray(clone.track.spatial_fingerprint.events, targetEventsPerTrack);
+              clone.track.spatial_fingerprint.event_count = clone.track.spatial_fingerprint.events.length;
+            }
+            if (clone.reference?.spatial_fingerprint?.events) {
+              clone.reference.spatial_fingerprint.events = downsampleArray(clone.reference.spatial_fingerprint.events, targetEventsPerTrack);
+              clone.reference.spatial_fingerprint.event_count = clone.reference.spatial_fingerprint.events.length;
+            }
+            
+            const str = JSON.stringify(clone);
+            return { data: clone, str, sizeMB: new Blob([str]).size / (1024 * 1024) };
+          }
+          
+          // Target well under typical 5MB quota; many browsers have less free space
+          const TARGET_MAX_MB = 1.8;
+          const TRIGGER_MB = 2.0;   // Start downsampling when payload exceeds this
+          
+          let processedData = data;
+          if (payloadSizeMB > TRIGGER_MB) {
+            // Tier 1: 500 points per curve
+            let result = applyDownsample(data, 500, 100);
+            if (result.sizeMB <= TARGET_MAX_MB) {
+              processedData = result.data;
+              dataString = result.str;
+              payloadSizeMB = result.sizeMB;
+            } else {
+              // Tier 2: more aggressive (300 points per curve)
+              result = applyDownsample(data, 300, 80);
+              processedData = result.data;
+              dataString = result.str;
+              payloadSizeMB = result.sizeMB;
+            }
+          }
+          
+          // Store dataString in a variable accessible to all nested functions
+          const persistentDataString = dataString;
+          
+          try {
+            // Get session name
+            const sessionName = document.getElementById('sessionName').value || 'Untitled Session';
+            
+            // Generate unique session ID
+            const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const sessionDate = new Date().toISOString();
+            
+            // Helper function to safely store in localStorage with quota handling
+            function safeLocalStorageSet(key, value) {
+              const valueSize = new Blob([value]).size;
+              
+              try {
+                // Clear old value first to free up space
+                if (key === 'tn:lastResult') {
+                  try {
+                    localStorage.removeItem(key);
+                  } catch (e) {
+                    // Ignore errors when clearing
+                  }
+                }
+                
+                localStorage.setItem(key, value);
+                
+                // Verify the write succeeded by reading it back immediately
+                const verify = localStorage.getItem(key);
+                if (verify !== value) {
+                  throw new Error(`localStorage write verification failed: stored ${verify?.length || 0} bytes, expected ${value.length} bytes`);
+                }
+                
+                return true;
+              } catch (e) {
+                // If quota exceeded, try to free up space by clearing old sessions
+                if (e.name === 'QuotaExceededError' || e.message.includes('quota') || e.message.includes('exceeded') || e.message.includes('verification failed')) {
+                  // Clear ALL old session data (not just keeping 3) for very large payloads
+                  try {
+                    let sessions = JSON.parse(localStorage.getItem('tn:sessions') || '[]');
+                    
+                    // For large payloads, clear ALL old sessions
+                    if (valueSize > 2 * 1024 * 1024) { // > 2MB
+                      sessions.forEach(s => {
+                        localStorage.removeItem(`tn:session:${s.id}`);
+                      });
+                      sessions = [];
+                    } else {
+                      // For smaller payloads, keep only the most recent 1
+                      if (sessions.length > 1) {
+                        const toRemove = sessions.slice(1);
+                        toRemove.forEach(s => {
+                          localStorage.removeItem(`tn:session:${s.id}`);
+                        });
+                        sessions = sessions.slice(0, 1);
+                      }
+                    }
+                    
+                    // Only clear old tn:lastResult if we're NOT storing tn:lastResult
+                    // (to avoid clearing the data we're trying to store)
+                    if (key !== 'tn:lastResult') {
+                      localStorage.removeItem('tn:lastResult');
+                    }
+                    
+                    // Try again after cleanup
+                    localStorage.setItem(key, value);
+                    
+                    // Verify again after retry
+                    const verifyRetry = localStorage.getItem(key);
+                    if (verifyRetry !== value) {
+                      throw new Error(`localStorage write verification failed after cleanup: stored ${verifyRetry?.length || 0} bytes, expected ${value.length} bytes`);
+                    }
+                    
+                    return true;
+                  } catch (e2) {
+                    throw e2;
+                  }
+                } else {
+                  throw e;
+                }
+              }
+            }
+            
+            // Calculate payload size
+            const payloadSizeMB = new Blob([persistentDataString]).size / (1024 * 1024);
+            
+            // For very large payloads, clear old session data to make space
+            // IMPORTANT: Do NOT clear tn:lastResult here - we're about to store the new data!
+            if (payloadSizeMB > 2) {
+              try {
+                let allSessions = JSON.parse(localStorage.getItem('tn:sessions') || '[]');
+                allSessions.forEach(s => {
+                  localStorage.removeItem(`tn:session:${s.id}`);
+                });
+                // DO NOT clear tn:lastResult - we need to store the new data there
+              } catch (e) {
+                // Ignore cleanup errors
+              }
+            }
+            
+            // Store current result for immediate use (this is the critical one)
+            // Store tn:lastResult FIRST since it's what the viz page needs
+            safeLocalStorageSet("tn:lastResult", persistentDataString);
+            
+            // Store full data separately as session (only if we have space)
+            // Skip session storage for very large payloads to avoid quota issues
+            if (payloadSizeMB <= 3) {
+              try {
+                const beforeSessionCheck = localStorage.getItem("tn:lastResult");
+                safeLocalStorageSet(`tn:session:${sessionId}`, persistentDataString);
+                const afterSessionCheck = localStorage.getItem("tn:lastResult");
+                
+                // If session storage cleared tn:lastResult, restore it immediately
+                if (!afterSessionCheck && beforeSessionCheck) {
+                  localStorage.setItem("tn:lastResult", persistentDataString);
+                }
+              } catch (e) {
+                // If session storage fails, that's okay - we have tn:lastResult
+                console.warn('Could not store session data, but lastResult is saved');
+                // Ensure tn:lastResult is still there
+                if (!localStorage.getItem("tn:lastResult")) {
+                  localStorage.setItem("tn:lastResult", persistentDataString);
+                }
+              }
+            }
+            
+            // Save only metadata to sessions list (much smaller)
+            let sessions = [];
+            try {
+              sessions = JSON.parse(localStorage.getItem('tn:sessions') || '[]');
+            } catch (e) {
+              sessions = [];
+            }
+            
+            sessions.unshift({
+              id: sessionId,
+              name: sessionName,
+              date: sessionDate
+            });
+            
+            // Keep only last 5 sessions for large payloads, 10 for smaller ones
+            const maxSessions = payloadSizeMB > 2 ? 5 : 10;
+            if (sessions.length > maxSessions) {
+              // Delete oldest session data
+              const toRemove = sessions.slice(maxSessions);
+              toRemove.forEach(s => {
+                localStorage.removeItem(`tn:session:${s.id}`);
+              });
+              sessions = sessions.slice(0, maxSessions);
+            }
+            
+            // Save sessions metadata (small)
+            try {
+              const beforeMetadataCheck = localStorage.getItem("tn:lastResult");
+              safeLocalStorageSet('tn:sessions', JSON.stringify(sessions));
+              const afterMetadataCheck = localStorage.getItem("tn:lastResult");
+              
+              // If metadata storage cleared tn:lastResult, restore it immediately
+              if (!afterMetadataCheck && beforeMetadataCheck) {
+                localStorage.setItem("tn:lastResult", persistentDataString);
+              }
+            } catch (e) {
+              // If this fails, it's not critical - metadata is small
+              console.warn('Could not save sessions metadata');
+              // Ensure tn:lastResult is still there
+              if (!localStorage.getItem("tn:lastResult")) {
+                localStorage.setItem("tn:lastResult", persistentDataString);
+              }
+            }
+            
+            // Final verification before redirect - restore if data was lost during session operations
+            const finalPreRedirectCheck = localStorage.getItem("tn:lastResult");
+            if (!finalPreRedirectCheck) {
+              try {
+                localStorage.setItem("tn:lastResult", persistentDataString);
+              } catch (restoreErr) {
+                console.error('Failed to restore data after session operations:', restoreErr);
+              }
+            }
+            
+            // Update status
+            const statusEl = document.getElementById("uploadStatus");
+            if (statusEl) {
+              statusEl.className = "status success";
+              statusEl.textContent = "Analysis complete! Redirecting...";
+            }
+            
+            // Navigate to viz page
+            // Add beforeunload handler to ensure data persists even if page unloads early
+            const beforeUnloadHandler = (e) => {
+              // Ensure data is saved before page unloads
+              if (!localStorage.getItem("tn:lastResult")) {
+                try {
+                  localStorage.setItem("tn:lastResult", persistentDataString);
+                } catch (err) {
+                  console.error('Failed to save data on beforeunload:', err);
+                }
+              }
+            };
+            window.addEventListener('beforeunload', beforeUnloadHandler);
+            
+            // Use a longer delay to ensure localStorage write is committed before redirect
+            // Also verify data is still there before redirecting
+            setTimeout(() => {
+              try {
+                // Final check and restore if needed
+                let preRedirectCheck = localStorage.getItem("tn:lastResult");
+                
+                // If data is missing, restore it immediately
+                if (!preRedirectCheck) {
+                  console.error("Data lost before redirect, attempting to restore...");
+                  try {
+                    // Clear everything else to make space
+                    try {
+                      let allSessions = JSON.parse(localStorage.getItem('tn:sessions') || '[]');
+                      allSessions.forEach(s => {
+                        localStorage.removeItem(`tn:session:${s.id}`);
+                      });
+                      localStorage.removeItem('tn:sessions');
+                    } catch (cleanupErr) {
+                      // Ignore cleanup errors
+                    }
+                    
+                    localStorage.setItem("tn:lastResult", persistentDataString);
+                    preRedirectCheck = localStorage.getItem("tn:lastResult");
+                  } catch (restoreErr) {
+                    console.error('Restore failed:', restoreErr);
+                  }
+                }
+                
+                // Remove beforeunload handler before redirecting
+                window.removeEventListener('beforeunload', beforeUnloadHandler);
+                
+                // Only redirect if we have data
+                if (preRedirectCheck) {
+                  window.location.href = "viz.html";
+                } else {
+                  alert("Error: Could not save analysis data. The analysis completed but data could not be stored. Please try again or check browser storage settings.");
+                }
+              } catch (e) {
+                console.error('Error in redirect setTimeout:', e);
+                // Try to redirect anyway - maybe data is there
+                try {
+                  if (localStorage.getItem("tn:lastResult")) {
+                    window.location.href = "viz.html";
+                  } else {
+                    alert(`Error: ${e.message}. Please try uploading again.`);
+                  }
+                } catch (e2) {
+                  alert(`Error: ${e.message}. Please try uploading again.`);
+                }
+              }
+            }, 1000);
+          } catch (e) {
+            console.error('Failed to save session:', e);
+            
+            // Try one more time with aggressive cleanup - clear EVERYTHING
+            let storageSucceeded = false;
+            try {
+              // Clear ALL old sessions
+              let sessions = JSON.parse(localStorage.getItem('tn:sessions') || '[]');
+              sessions.forEach(s => {
+                localStorage.removeItem(`tn:session:${s.id}`);
+              });
+              localStorage.removeItem('tn:lastResult');
+              
+              // Clear sessions metadata too
+              localStorage.removeItem('tn:sessions');
+              
+              // Try storing just the lastResult (most critical)
+              localStorage.setItem("tn:lastResult", persistentDataString);
+              
+              // Verify storage succeeded
+              const verify = localStorage.getItem("tn:lastResult");
+              if (verify === persistentDataString) {
+                storageSucceeded = true;
+              } else {
+                throw new Error('Storage verification failed after fallback');
+              }
+            } catch (e2) {
+              console.error('Fallback storage also failed:', e2);
+              
+              // DO NOT redirect if storage failed - show error and let user decide
+              const statusEl = document.getElementById("uploadStatus");
+              if (statusEl) {
+                statusEl.className = "status error";
+                statusEl.textContent = `Error: Analysis completed but could not save to browser storage (quota exceeded). The data is too large (${(new Blob([persistentDataString]).size/(1024*1024)).toFixed(2)}MB). Please try with a shorter audio file or clear browser storage.`;
+              }
+              alert(`Error: Could not save analysis data. The data is too large for browser storage (${(new Blob([persistentDataString]).size/(1024*1024)).toFixed(2)}MB).\n\nPlease try:\n1. Using a shorter audio file\n2. Clearing browser storage (Settings > Privacy > Clear browsing data)\n3. Using a different browser\n\nError: ${e2.message}`);
+              return; // Don't redirect - storage failed
+            }
+            
+            // Only redirect if storage succeeded
+            if (storageSucceeded) {
+              const statusEl = document.getElementById("uploadStatus");
+              if (statusEl) {
+                statusEl.className = "status success";
+                statusEl.textContent = "Analysis complete! Redirecting...";
+              }
+              setTimeout(() => {
+                window.location.href = "viz.html";
+              }, 500);
+            }
+          }
+        },
+        onError: (err) => {
+          const statusEl = document.getElementById("uploadStatus");
+          if (statusEl) {
+            statusEl.className = "status error";
+            statusEl.textContent = `Error: ${err.message || String(err)}`;
+          }
+          console.error("Upload error:", err);
+        }
+      });
+
+      const btnUpload = document.getElementById("btnUpload");
+      const mainFileInput = document.getElementById("mainFile");
+      const refFileInput = document.getElementById("refFile");
+
+      btnUpload?.addEventListener("click", async () => {
+        const sessionName = document.getElementById('sessionName')?.value?.trim();
+        if (!sessionName) {
+          alert("Please enter a session name");
+          document.getElementById('sessionName')?.focus();
+          return;
+        }
+
+        const mainFile = mainFileInput?.files?.[0];
+        if (!mainFile) {
+          alert("Please select a main track file");
+          return;
+        }
+
+        try {
+          const refFile = refFileInput?.files?.[0] || null;
+          const apiUrl = document.getElementById('apiEndpoint')?.value || "http://localhost:8000";
+          uploadHandler.apiBaseUrl = apiUrl;
+          await uploadHandler.uploadAndAnalyze(mainFile, refFile);
+        } catch (err) {
+          // Error already handled by onError callback
+        }
+      });
+
+      // Load sessions on page load
+      loadSessions();
+      
+      // Global error handler to catch 404s and other network errors
+      window.addEventListener('error', function(event) {
+        // Error logging can be added here if needed
+      }, true);
+      
+      // Track failed resource loads
+      window.addEventListener('unhandledrejection', function(event) {
+        // Error logging can be added here if needed
+      });
+    </script>
+  </body>
+</html>
