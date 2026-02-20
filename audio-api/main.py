@@ -46,6 +46,12 @@ async def health():
 
 # ---------- core helper: run analyzers on ONE file ----------
 
+# Cap analyzed duration (seconds) to limit memory on constrained hosts (e.g. Render 512MB).
+# Set MAX_ANALYZE_SECONDS in Render env vars if you need a different limit (default 300 = 5 min).
+MAX_ANALYZE_SECONDS = int(os.environ.get("MAX_ANALYZE_SECONDS", "300"))
+ANALYSIS_SR = 22050  # Downsample for analysis to save memory
+
+
 async def run_all_analyzers(upload_file: UploadFile) -> dict:
     """Take an UploadFile, save it temporarily, run ALL features, return JSON."""
     filename = upload_file.filename or ""
@@ -65,26 +71,39 @@ async def run_all_analyzers(upload_file: UploadFile) -> dict:
         tmp.write(content)
 
     try:
-        # Load audio (mono=False so we can compute stereo width)
+        # Load audio downsampled to ANALYSIS_SR (memory-safe), mono=False for stereo width
         try:
-            y, sr = librosa.load(tmp_path, sr=None, mono=False)
+            y, sr = librosa.load(tmp_path, sr=ANALYSIS_SR, mono=False)
         except Exception as e:
             raise HTTPException(
                 status_code=500,
                 detail=f"Could not read audio file: {e}",
             )
 
-        y = np.asarray(y, dtype=float)
+        y = np.asarray(y, dtype=np.float32)
 
-        # mono mixdown for mono-based features
+        # mono mixdown for mono-based features (float32)
         if y.ndim == 1:
             y_mono = y
         else:
-            y_mono = np.mean(y, axis=0)
+            y_mono = np.mean(y, axis=0).astype(np.float32)
 
-        duration = librosa.get_duration(y=y_mono, sr=sr)
+        full_duration = librosa.get_duration(y=y_mono, sr=sr)
+        max_samples = int(sr * MAX_ANALYZE_SECONDS)
+        analysis_trimmed = False
+        analyzed_duration_sec = float(full_duration)
 
-        # Run existing analyzers
+        if y_mono.size > max_samples:
+            analysis_trimmed = True
+            analyzed_duration_sec = float(max_samples / sr)
+            n = max_samples
+            y_mono = y_mono[:n]
+            if y.ndim == 1:
+                y = y[:n]
+            else:
+                y = y[:, :n].copy()
+
+        # Run existing analyzers on (possibly trimmed) buffers
         lufs = compute_lufs(y_mono, sr)
         crest = compute_crest_factor_over_time(y_mono, sr)
         transients = compute_transient_density(y_mono, sr)
@@ -104,7 +123,9 @@ async def run_all_analyzers(upload_file: UploadFile) -> dict:
         return {
             "filename": filename,
             "sample_rate": int(sr),
-            "duration_sec": float(duration),
+            "duration_sec": float(full_duration),
+            "analysis_trimmed": analysis_trimmed,
+            "analyzed_duration_sec": analyzed_duration_sec,
             "features": features,
         }
     finally:
@@ -192,7 +213,7 @@ def sanitize_for_json(payload: Any, path: str = "", non_finite_paths: list = Non
 async def spatial_fingerprint(
     main_file: UploadFile = File(...),
     ref_file: Optional[UploadFile] = File(None),
-    max_events: int = 250,
+    max_events: int = 200,
 ):
     """
     WAV-only. Returns normalized 'Spatial Fingerprint' events for main + optional reference.

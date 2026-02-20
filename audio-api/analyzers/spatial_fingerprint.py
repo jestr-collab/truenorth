@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import Dict, List, Tuple, Optional
 import numpy as np
 import librosa
@@ -32,8 +33,8 @@ def safe_norm(x: np.ndarray) -> np.ndarray:
 DEFAULT_FP_SETTINGS = {
     "sr": 22050,
     "hop_length": 256,
-    "max_events": 250,
-    "max_duration_sec": 600.0,  # 10 minutes
+    "max_events": 200,
+    "max_duration_sec": 300.0,  # 5 minutes (Render-safe default)
     "onset_backtrack": True,
     "event_pre_ms": 20,
     "presence_window_ms": 150,
@@ -135,6 +136,8 @@ def compute_spatial_fingerprint_from_path(
     cfg = dict(DEFAULT_FP_SETTINGS)
     if settings:
         cfg.update(settings)
+    cfg["max_duration_sec"] = float(os.getenv("FP_MAX_DURATION_SEC", cfg["max_duration_sec"]))
+    cfg["max_events"] = int(os.getenv("FP_MAX_EVENTS", cfg["max_events"]))
 
     sr_target = int(cfg["sr"])
     hop_length = int(cfg["hop_length"])
