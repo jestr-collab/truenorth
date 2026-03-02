@@ -7,9 +7,6 @@
 // =====================
 
 (function registerLoudness() {
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'loudnesscurve.js:registerLoudness:entry',message:'Registering loudness module',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-  // #endregion
   window.TrueNorthVizzes = window.TrueNorthVizzes || {};
 
   window.TrueNorthVizzes.loudness = {
@@ -382,12 +379,7 @@
             .attr("stroke-width", 1.2)
             .attr("opacity", 1);
 
-          // #region agent log
-          // Store hover dot's time value for zoom focal point
           hoverDotTime = d.t_s;
-          fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'loudnesscurve.js:319',message:'Hover dot updated',data:{hoverDotTime:d.t_s,mouseX:mx,hoverDotX:x(d.t_s),currentDomain:x.domain()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-          // #endregion
-
           showTip(event, d, mode === "ref" ? "Reference" : "Track");
         })
         .on("mouseleave", hideTip);
@@ -446,21 +438,12 @@
           
           // Get current domain BEFORE applying zoom (for focal point calculation)
           const [currentMin, currentMax] = x.domain();
-          
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'loudnesscurve.js:372',message:'Zoom event start',data:{transformK:t.k,currentDomain:[currentMin,currentMax],hoverDotTime:hoverDotTime,currentMouseX:currentMouseX},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-          // #endregion
-          
+
           // Use hover dot's time value as focal point if available (locks to grid point)
           // Otherwise fall back to mouse position
           let focalTime;
           if (hoverDotTime !== null && hoverDotTime >= currentMin && hoverDotTime <= currentMax) {
-            // Use the hover dot's actual time value (grid point)
             focalTime = hoverDotTime;
-            
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'loudnesscurve.js:388',message:'Using hover dot time as focal point',data:{focalTime:focalTime,hoverDotTime:hoverDotTime},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-            // #endregion
           } else {
             // Fallback: Get mouse position from source event if available
             let focalX = currentMouseX;
@@ -471,12 +454,7 @@
               }
             }
             
-            // Calculate focal time using CURRENT domain (before zoom)
             focalTime = x.invert(focalX);
-            
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'loudnesscurve.js:401',message:'Using mouse position as focal point',data:{focalTime:focalTime,focalX:focalX},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-            // #endregion
           }
           
           // Calculate new range based on zoom scale
@@ -506,11 +484,7 @@
           }
           
           x.domain([newMin, newMax]);
-          
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'loudnesscurve.js:430',message:'Domain updated after zoom',data:{focalTime:focalTime,newDomain:[newMin,newMax],focalTimeInNewDomain:x(focalTime)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-          // #endregion
-          
+
           // Redraw with new domain
           const curve = mode === "ref" ? refCurve : trackCurve;
           render(curve);
@@ -542,7 +516,4 @@
       // const timeRow = document.getElementById(ctx.timeRowId); // ctx not available here
     }
   };
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'loudnesscurve.js:registerLoudness:registered',message:'Loudness module registered',data:{hasMount:!!window.TrueNorthVizzes?.loudness?.mount},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-  // #endregion
 })();

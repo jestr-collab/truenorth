@@ -27,12 +27,23 @@ from analyzers import (
 
 app = FastAPI()
 
-# Add CORS middleware to allow cross-origin requests.
-# allow_credentials=False is required when allow_origins=["*"] (browser CORS rule).
-# For auth/cookies, set allow_origins to explicit frontend URLs and allow_credentials=True.
+# CORS: Live Server origins + optional env (e.g. CORS_ORIGINS=https://myapp.com,https://app.example.com)
+_cors_origins = [
+    "http://127.0.0.1:5501",
+    "http://127.0.0.1:5500",
+    "http://localhost:5501",
+    "http://localhost:5500",
+]
+_env_origins = os.environ.get("CORS_ORIGINS") or os.environ.get("CORS_ORIGIN")
+if _env_origins:
+    for o in _env_origins.replace(",", " ").split():
+        o = o.strip()
+        if o and o not in _cors_origins:
+            _cors_origins.append(o)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_cors_origins,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -40,8 +51,13 @@ app.add_middleware(
 
 
 @app.get("/")
-async def health():
+async def root():
     return {"status": "ok", "message": "audio-api Phase 1 skeleton running"}
+
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
 
 
 # ---------- core helper: run analyzers on ONE file ----------
@@ -238,7 +254,8 @@ async def spatial_fingerprint(
             ref_name = _require_wav(ref_file)
 
         settings = dict(DEFAULT_FP_SETTINGS)
-        settings["max_events"] = int(max_events)
+        settings["max_events"] = int(os.getenv("FP_MAX_EVENTS", "200"))
+        settings["max_duration_sec"] = float(os.getenv("FP_MAX_DURATION_SEC", "300"))
 
         # Save main to temp
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_main:

@@ -5,9 +5,6 @@
 // =====================
 
 (function registerSpatial() {
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:registerSpatial:entry',message:'Registering spatial module',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-  // #endregion
   window.TrueNorthVizzes = window.TrueNorthVizzes || {};
 
   window.TrueNorthVizzes.spatial = {
@@ -117,15 +114,6 @@
         refObj?.events ??
         [];
       
-      // #region agent log
-      const trackEventTimes = trackEventsAll.map(e => Number(e?.t_s ?? 0)).filter(t => Number.isFinite(t)).sort((a,b) => a-b);
-      const trackAngles = trackEventsAll.map(e => Number(e?.angle ?? 0)).filter(a => Number.isFinite(a));
-      const trackAngleMin = trackAngles.length > 0 ? Math.min(...trackAngles) : 0;
-      const trackAngleMax = trackAngles.length > 0 ? Math.max(...trackAngles) : 0;
-      const trackAngleMean = trackAngles.length > 0 ? trackAngles.reduce((a,b) => a+b, 0) / trackAngles.length : 0;
-      fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:mount',message:'Track events loaded',data:{eventCount:trackEventsAll.length,firstEventTime:trackEventTimes[0],lastEventTime:trackEventTimes[trackEventTimes.length-1],angleMin:trackAngleMin,angleMax:trackAngleMax,angleMean:trackAngleMean.toFixed(3),first10Times:trackEventTimes.slice(0,10)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
-
       trackName =
         trackObj?.meta?.filename ??
         trackObj?.filename ??
@@ -316,20 +304,11 @@
 
       // ---------- region stats UI (mounted once per mount) ----------
       function ensureRegionStatsPanel() {
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:ensureRegionStatsPanel:entry',message:'Creating region stats panel',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-        // #endregion
-        
         const chart = document.querySelector(ctx.svgSelector);
         const titleWrap = document.getElementById(ctx.titleId)?.parentElement;
         const regionStatsWrap = document.getElementById("regionStatsWrap");
         
-        if (!chart || !regionStatsWrap) {
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:ensureRegionStatsPanel:missingElements',message:'Missing chart or regionStatsWrap',data:{hasChart:!!chart,hasRegionStatsWrap:!!regionStatsWrap},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'C'})}).catch(()=>{});
-          // #endregion
-          return;
-        }
+        if (!chart || !regionStatsWrap) return;
 
         // Remove existing Region Stats if it exists (prevent duplicates)
         const existingStats = document.getElementById("tnRegionStats");
@@ -745,16 +724,6 @@
       function filteredAccum(eventsAll, tThreshold) {
         const filtered = (eventsAll || []).filter(d => Number(d?.t_s ?? 0) <= tThreshold);
         
-        // #region agent log
-        if (tThreshold < 20 && filtered.length > 0) {
-          const firstFilteredTime = Math.min(...filtered.map(e => Number(e?.t_s ?? 0)));
-          const angles = filtered.map(e => Number(e?.angle ?? 0));
-          const angleMin = angles.length > 0 ? Math.min(...angles) : 0;
-          const angleMax = angles.length > 0 ? Math.max(...angles) : 0;
-          fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:filteredAccum',message:'Events filtered',data:{tThreshold:tThreshold.toFixed(2),totalEvents:eventsAll.length,filteredCount:filtered.length,firstFilteredTime:firstFilteredTime,angleMin:angleMin,angleMax:angleMax},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-        }
-        // #endregion
-        
         return filtered;
       }
 
@@ -791,18 +760,6 @@
         if (showTrack) {
           const events = filteredAccum(trackEventsAll, tThreshold);
           const glowEvents = events.filter(d => Number(d?.wetness ?? 0) >= WET_GLOW_THRESHOLD);
-          
-          // #region agent log
-          if (events.length > 0) {
-            const eventAngles = events.map(e => Number(e?.angle ?? 0));
-            const angleMin = Math.min(...eventAngles);
-            const angleMax = Math.max(...eventAngles);
-            const xPositions = events.map(e => xPlot(e));
-            const xMin = Math.min(...xPositions);
-            const xMax = Math.max(...xPositions);
-            fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:redraw',message:'Rendering track events',data:{eventCount:events.length,tThreshold:tThreshold.toFixed(2),angleMin:angleMin,angleMax:angleMax,xMin:xMin.toFixed(1),xMax:xMax.toFixed(1),innerW:innerW},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-          }
-          // #endregion
 
           activeEvents = events;
           activeTotal = events.length;
@@ -867,82 +824,40 @@
     },
 
     unmount() {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:unmount:entry',message:'Spatial unmount called',data:{hasState:!!this.__tn_spatial_state},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'B'})}).catch(()=>{});
-      // #endregion
-      
       const state = this.__tn_spatial_state;
 
-      // remove listeners
       if (state?.onResize) {
         window.removeEventListener("resize", state.onResize);
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:unmount:removeResize',message:'Removed resize listener',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
       }
 
-      // remove injected UI - try via state first, then fallback to ID lookup
       if (state?.statsEl?.parentNode) {
         state.statsEl.parentNode.removeChild(state.statsEl);
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:unmount:removeStats',message:'Removed stats element via state',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
       } else {
-        // Fallback: remove by ID if state is missing
         const statsEl = document.getElementById('tnRegionStats');
-        if (statsEl?.parentNode) {
-          statsEl.parentNode.removeChild(statsEl);
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:unmount:removeStatsById',message:'Removed stats element by ID',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'B'})}).catch(()=>{});
-          // #endregion
-        }
+        if (statsEl?.parentNode) statsEl.parentNode.removeChild(statsEl);
       }
-      
+
       if (state?.legendEl?.parentNode) {
         state.legendEl.parentNode.removeChild(state.legendEl);
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:unmount:removeLegend',message:'Removed legend element via state',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
       } else {
-        // Fallback: remove by ID if state is missing
         const legendEl = document.getElementById('tnDominantLegend');
-        if (legendEl?.parentNode) {
-          legendEl.parentNode.removeChild(legendEl);
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:unmount:removeLegendById',message:'Removed legend element by ID',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'B'})}).catch(()=>{});
-          // #endregion
-        }
+        if (legendEl?.parentNode) legendEl.parentNode.removeChild(legendEl);
       }
-      
+
       if (state?.styleEl?.parentNode) {
         state.styleEl.parentNode.removeChild(state.styleEl);
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:unmount:removeStyle',message:'Removed style element via state',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
       } else {
-        // Fallback: remove style by finding the last added style with our content
         const styles = document.head.querySelectorAll('style');
         for (let i = styles.length - 1; i >= 0; i--) {
           const style = styles[i];
           if (style.textContent && style.textContent.includes('#tnRegionStats')) {
             style.parentNode.removeChild(style);
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:unmount:removeStyleById',message:'Removed style element by content',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'B'})}).catch(()=>{});
-            // #endregion
             break;
           }
         }
       }
-      
 
       this.__tn_spatial_state = null;
-      
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:unmount:exit',message:'Spatial unmount complete',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'B'})}).catch(()=>{});
-      // #endregion
     }
   };
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app.js:registerSpatial:registered',message:'Spatial module registered',data:{hasMount:!!window.TrueNorthVizzes?.spatial?.mount},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-  // #endregion
 })();

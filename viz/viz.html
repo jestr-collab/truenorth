@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>TrueNorth Viz</title>
 
-    <!-- Fonts -->
-     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <!-- Fonts (match landing: IBM Plex Mono for UI) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 
 
     
@@ -25,15 +25,9 @@
         --mintDark: #008080;
 
         --glow:     var(--mintDark);
-       --font-main: "___", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-
-
-
-
-
-       --ui: var(--font-main);
-
-        --digits: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        --font-main: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        --ui: var(--font-main);
+        --digits: var(--font-main);
       }
 
       html, body { height: 100%; }
@@ -61,7 +55,10 @@
 
       #hint{
         color: var(--muted);
-        font-size: 12px;
+        font-size: 11px;
+        font-family: var(--ui);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
       }
 
       #vizContainer{
@@ -145,8 +142,9 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        font-family: var(--ui);
         font-weight: 600;
-        font-size: 14px;
+        font-size: 13px;
         color: rgba(0,0,0,0.75);
         max-width: 100%;
       }
@@ -171,13 +169,16 @@
         margin-top: 8px;
       }
       .btn-notes-toggle{
-        font-size: 12px;
+        font-family: var(--ui);
+        font-size: 11px;
         color: var(--muted);
         background: transparent;
         border: 1px dashed var(--line);
         border-radius: 8px;
         padding: 6px 12px;
         cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
         transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
       }
       .btn-notes-toggle:hover{
@@ -215,11 +216,12 @@
         border-right: none;
       }
       .notes-label{
+        font-family: var(--ui);
         font-size: 11px;
         font-weight: 600;
         color: var(--muted);
         text-transform: uppercase;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.08em;
         padding: 10px 14px 6px;
         flex-shrink: 0;
       }
@@ -399,12 +401,16 @@
       }
 
       #sidebarTabs button{
-        flex: 1;
-        min-width: 0;
+        flex: 1 1 calc(50% - 6px);
+        min-width: 74px;
+        max-width: 100%;
         text-align: center;
-        padding: 8px 4px 8px 8px;
+        padding: 8px 8px;
         font-size: 11px;
-        overflow: hidden;
+        font-family: var(--ui);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        overflow: visible;
         white-space: nowrap;
         box-sizing: border-box;
       }
@@ -419,11 +425,12 @@
       }
 
       #tabDocs h3{
-        font-size: 14px;
+        font-family: var(--ui);
+        font-size: 13px;
         font-weight: 600;
         color: var(--ink);
         margin: 0 0 8px 0;
-        letter-spacing: -0.01em;
+        letter-spacing: 0.02em;
         line-height: 1.3;
       }
 
@@ -434,6 +441,7 @@
       }
 
       #tabDocs li{
+        font-family: var(--ui);
         font-size: 12px;
         line-height: 1.5;
         color: var(--muted);
@@ -449,6 +457,39 @@
       #tabDocs a{
         display: inline-block;
         margin-top: 12px;
+      }
+
+      /* Delta Summary (Track vs Reference) */
+      #deltaSummaryWrap{
+        padding-top: 14px;
+        margin-top: 14px;
+        border-top: 1px solid var(--line2);
+        max-width: 100%;
+      }
+      #deltaSummaryWrap .delta-summary-title{
+        font-family: var(--ui);
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+        margin: 0 0 8px 0;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        cursor: default;
+      }
+      #deltaSummaryWrap .delta-summary-line{
+        font-family: var(--ui);
+        font-size: 12px;
+        line-height: 1.5;
+        color: var(--ink);
+        padding: 4px 0;
+        cursor: pointer;
+        transition: color 0.15s ease, background 0.15s ease;
+        border-radius: 4px;
+        padding-left: 4px;
+        margin-left: -4px;
+      }
+      #deltaSummaryWrap .delta-summary-line:hover{
+        color: var(--mint);
       }
 
       /* Region Stats wrapper in sidebar */
@@ -495,7 +536,7 @@
 
       <!-- Error message (hidden by default, shown if no data) -->
       <div id="errorMessage" style="display: none;">
-        No analysis loaded. <a href="index.html">Upload files</a>
+        No session loaded. <a href="index.html">Upload files</a>
       </div>
 
       <!-- Viz UI (hidden by default, shown when data is loaded) -->
@@ -551,6 +592,12 @@
             <!-- Documentation section (updates based on active tab) -->
             <div id="tabDocs"></div>
 
+            <!-- Delta Summary (Track vs Reference); lines filled by JS -->
+            <div id="deltaSummaryWrap" class="delta-summary-wrap" title="Largest delta per tab across full track.">
+              <h3 class="delta-summary-title">Delta Summary (Track vs Reference)</h3>
+              <div id="deltaSummaryLines"></div>
+            </div>
+
             <!-- Region Stats container (only visible for Spatial tab) -->
             <div id="regionStatsWrap"></div>
           </aside>
@@ -562,6 +609,7 @@
 
     <!-- Load D3 once -->
     <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="./apiConfig.js"></script>
     <!-- Load upload handler -->
     <script src="./uploadHandler.js"></script>
     <!-- Load viz system (production loader) -->

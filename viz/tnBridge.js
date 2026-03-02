@@ -24,37 +24,21 @@
 
   function unmountCurrentIfPossible(registry) {
     const prev = __currentViz;
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'tnBridge.js:unmountCurrentIfPossible:entry',message:'Unmounting current viz',data:{prevViz:prev,hasUnmount:!!(prev && registry?.[prev]?.unmount)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
     if (prev && registry?.[prev]?.unmount) {
       try {
         registry[prev].unmount();
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'tnBridge.js:unmountCurrentIfPossible:success',message:'Unmount successful',data:{prevViz:prev},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
       } catch (e) {
         console.warn("Error during unmount:", prev, e);
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'tnBridge.js:unmountCurrentIfPossible:error',message:'Unmount error',data:{prevViz:prev,error:String(e)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
       }
     }
   }
 
   function mountViz(name) {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'tnBridge.js:mountViz:entry',message:'Mounting viz',data:{vizName:name,prevViz:__currentViz},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
-    
     const reg = window.TrueNorthVizzes || {};
     const mod = reg?.[name];
 
     if (!mod?.mount) {
       console.error("Viz not registered:", name, reg);
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'tnBridge.js:mountViz:notRegistered',message:'Viz not registered',data:{vizName:name,availableVizzes:Object.keys(reg)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-      // #endregion
       return;
     }
 
@@ -64,16 +48,9 @@
     clearSvgAndTooltip();
 
     try {
-      // IMPORTANT: every viz gets the same ctx object
       mod.mount({ data: __data, ...mountIds });
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'tnBridge.js:mountViz:success',message:'Mount successful',data:{vizName:name},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-      // #endregion
     } catch (e) {
       console.error("Error mounting viz:", name, e);
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'tnBridge.js:mountViz:error',message:'Mount error',data:{vizName:name,error:String(e)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-      // #endregion
     }
   }
 

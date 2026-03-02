@@ -7,32 +7,14 @@
 
 async function loadScriptOnce(src) {
   const already = [...document.scripts].some(s => (s.src || "").includes(src));
-  if (already) {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'vizShell.js:loadScriptOnce:alreadyLoaded',message:'Script already loaded',data:{src},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-    // #endregion
-    return;
-  }
+  if (already) return;
 
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'vizShell.js:loadScriptOnce:loading',message:'Loading script',data:{src},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-  // #endregion
   await new Promise((resolve, reject) => {
     const s = document.createElement("script");
     s.src = src;
     s.async = true;
-    s.onload = () => {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'vizShell.js:loadScriptOnce:onload',message:'Script loaded successfully',data:{src},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
-      resolve();
-    };
-    s.onerror = () => {
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'vizShell.js:loadScriptOnce:onerror',message:'Script failed to load',data:{src},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-      // #endregion
-      reject(new Error(`Failed to load ${src}`));
-    };
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error(`Failed to load ${src}`));
     document.body.appendChild(s);
   });
 }
@@ -54,62 +36,19 @@ function forceRemountCurrentViz() {
 
 (async function main() {
   try {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'vizShell.js:main:entry',message:'Starting module loading',data:{registryBefore:Object.keys(window.TrueNorthVizzes || {})},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
-    
     // 1) Load viz modules
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'vizShell.js:main:beforeAppJs',message:'About to load app.js',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
     await loadScriptOnce("./app.js");
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'vizShell.js:main:afterAppJs',message:'app.js loaded',data:{registryAfter:Object.keys(window.TrueNorthVizzes || {}),hasSpatial:!!(window.TrueNorthVizzes?.spatial?.mount)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
-    
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'vizShell.js:main:beforeLoudnessJs',message:'About to load loudnesscurve.js',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
     await loadScriptOnce("./loudnesscurve.js");
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'vizShell.js:main:afterLoudnessJs',message:'loudnesscurve.js loaded',data:{registryAfter:Object.keys(window.TrueNorthVizzes || {}),hasLoudness:!!(window.TrueNorthVizzes?.loudness?.mount)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
-    
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'vizShell.js:main:beforeCrestJs',message:'About to load crestcurve.js',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
     await loadScriptOnce("./crestcurve.js");
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'vizShell.js:main:afterCrestJs',message:'crestcurve.js loaded',data:{registryAfter:Object.keys(window.TrueNorthVizzes || {}),hasCrest:!!(window.TrueNorthVizzes?.crest?.mount)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
-    
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'vizShell.js:main:beforeLowendJs',message:'About to load lowendcurve.js',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
     await loadScriptOnce("./lowendcurve.js");
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'vizShell.js:main:afterLowendJs',message:'lowendcurve.js loaded',data:{registryAfter:Object.keys(window.TrueNorthVizzes || {}),hasLowend:!!(window.TrueNorthVizzes?.lowend?.mount)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
 
     // 2) Load bridge
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'vizShell.js:main:beforeBridgeJs',message:'About to load tnBridge.js',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
     await loadScriptOnce("./tnBridge.js");
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'vizShell.js:main:afterBridgeJs',message:'tnBridge.js loaded',data:{hasTrueNorthViz:!!window.TrueNorthViz},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
 
     // 3) Validate
     const reg = window.TrueNorthVizzes || {};
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'vizShell.js:main:validation',message:'Validating registry',data:{registryKeys:Object.keys(reg),hasSpatial:!!reg.spatial?.mount,hasLoudness:!!reg.loudness?.mount,hasCrest:!!reg.crest?.mount,hasLowend:!!reg.lowend?.mount,spatialType:typeof reg.spatial,loudnessType:typeof reg.loudness,crestType:typeof reg.crest,lowendType:typeof reg.lowend},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
     if (!reg.spatial?.mount || !reg.loudness?.mount || !reg.crest?.mount || !reg.lowend?.mount) {
       console.error("Registry:", reg);
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'vizShell.js:main:validationFailed',message:'Validation failed - missing registration',data:{missingSpatial:!reg.spatial?.mount,missingLoudness:!reg.loudness?.mount,missingCrest:!reg.crest?.mount,missingLowend:!reg.lowend?.mount,fullRegistry:JSON.stringify(reg)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-      // #endregion
       throw new Error("Missing viz registration (spatial, loudness, crest, or lowend missing).");
     }
     if (!window.TrueNorthViz?.setData || !window.TrueNorthViz?.setViz || !window.TrueNorthViz?.getData) {
@@ -425,6 +364,96 @@ function forceRemountCurrentViz() {
     renderDocumentation("spatial");
     updateRegionStatsVisibility("spatial");
 
+    // ---------------------------
+    // Delta Summary (Track vs Reference)
+    // ---------------------------
+    function renderDeltaSummary(data) {
+      const wrap = document.getElementById("deltaSummaryWrap");
+      const linesEl = document.getElementById("deltaSummaryLines");
+      if (!wrap || !linesEl) return;
+
+      const track = data?.track ?? null;
+      const ref = data?.reference ?? null;
+      const na = "—";
+
+      function std(arr) {
+        if (!arr || arr.length < 2) return NaN;
+        const n = arr.length;
+        const mean = arr.reduce((a, b) => a + b, 0) / n;
+        const variance = arr.reduce((s, x) => s + (x - mean) ** 2, 0) / n;
+        return Math.sqrt(variance);
+      }
+
+      // Low-End: sub/bass ratio delta (raw ratio)
+      let lowEndDelta = na;
+      if (track?.features?.low_end?.points && ref?.features?.low_end?.points) {
+        const trackPts = track.features.low_end.points;
+        const refPts = ref.features.low_end.points;
+        const mean = (arr, key) => {
+          const vals = arr.map((p) => Number(p[key])).filter((n) => Number.isFinite(n));
+          return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : NaN;
+        };
+        const subT = mean(trackPts, "sub"), bassT = mean(trackPts, "bass");
+        const subR = mean(refPts, "sub"), bassR = mean(refPts, "bass");
+        const ratioT = bassT > 0 ? subT / bassT : NaN;
+        const ratioR = bassR > 0 ? subR / bassR : NaN;
+        if (Number.isFinite(ratioT) && Number.isFinite(ratioR)) {
+          const d = ratioT - ratioR;
+          lowEndDelta = (d >= 0 ? "+" : "") + d.toFixed(2);
+        }
+      }
+
+      // LUFS: integrated delta in dB
+      let lufsDelta = na;
+      if (track?.features?.lufs?.integrated != null && ref?.features?.lufs?.integrated != null) {
+        const t = Number(track.features.lufs.integrated);
+        const r = Number(ref.features.lufs.integrated);
+        if (Number.isFinite(t) && Number.isFinite(r)) {
+          const d = t - r;
+          lufsDelta = (d >= 0 ? "+" : "") + d.toFixed(1) + " dB";
+        }
+      }
+
+      // Crest: std(crest_db) delta in dB
+      let crestDelta = na;
+      if (track?.features?.crest?.points && ref?.features?.crest?.points) {
+        const toNum = (arr) => arr.map((p) => Number(p.crest_db)).filter((n) => Number.isFinite(n));
+        const trackCrest = toNum(track.features.crest.points);
+        const refCrest = toNum(ref.features.crest.points);
+        if (trackCrest.length >= 2 && refCrest.length >= 2) {
+          const d = std(trackCrest) - std(refCrest);
+          crestDelta = (d >= 0 ? "+" : "") + d.toFixed(1) + " dB";
+        }
+      }
+
+      const rows = [
+        { label: "Loudness (LUFS)", value: lufsDelta, viz: "loudness", btnId: "btnVizLoudness" },
+        { label: "Dynamics (Crest)", value: crestDelta, viz: "crest", btnId: "btnVizCrest" },
+        { label: "Low-End", value: lowEndDelta, viz: "lowend", btnId: "btnVizLowEnd" },
+      ];
+
+      linesEl.innerHTML = rows
+        .map(
+          (r) =>
+            `<div class="delta-summary-line" data-viz="${r.viz}" data-btn-id="${r.btnId}" role="button" tabindex="0">${r.label}: ${r.value}</div>`
+        )
+        .join("");
+
+      linesEl.querySelectorAll(".delta-summary-line").forEach((el) => {
+        el.addEventListener("click", () => {
+          const viz = el.getAttribute("data-viz");
+          const btnId = el.getAttribute("data-btn-id");
+          if (!viz || !btnId) return;
+          currentViz = viz;
+          setActiveButton(btnId, allVizBtns);
+          window.TrueNorthViz.setViz(viz);
+          renderDocumentation(viz);
+          updateRegionStatsVisibility(viz);
+        });
+      });
+    }
+    renderDeltaSummary(window.TrueNorthViz.getData());
+
     // Ensure the time scrubber and viz start at 0% (00:00) on first load
     const initialScrub = document.getElementById("timeScrub");
     if (initialScrub) {
@@ -507,7 +536,7 @@ function forceRemountCurrentViz() {
 
     if (btnUpload && typeof window.TrueNorthUploadHandler !== 'undefined') {
       const uploadHandler = new TrueNorthUploadHandler({
-        apiBaseUrl: "http://localhost:8000",
+        apiBaseUrl: typeof window.getApiBaseUrl === "function" ? window.getApiBaseUrl() : "http://localhost:8000",
         endpoint: "/spatial-fingerprint",
         onLoading: (loading) => {
           const statusEl = document.getElementById("uploadStatus");
@@ -533,6 +562,9 @@ function forceRemountCurrentViz() {
           // Set data in viz system
           if (window.TrueNorthViz?.setData) {
             window.TrueNorthViz.setData(data);
+          }
+          if (typeof renderDeltaSummary === "function" && window.TrueNorthViz?.getData) {
+            renderDeltaSummary(window.TrueNorthViz.getData());
           }
         },
         onError: (err) => {

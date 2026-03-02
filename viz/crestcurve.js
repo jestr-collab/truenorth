@@ -448,21 +448,12 @@
         
         // Get current domain BEFORE applying zoom (for focal point calculation)
         const [currentMin, currentMax] = x.domain();
-        
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'crestcurve.js:342',message:'Zoom event start',data:{transformK:t.k,currentDomain:[currentMin,currentMax],hoverDotTime:hoverDotTime,currentMouseX:currentMouseX},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
-        
+
         // Use hover dot's time value as focal point if available (locks to grid point)
         // Otherwise fall back to mouse position
         let focalTime;
         if (hoverDotTime !== null && hoverDotTime >= currentMin && hoverDotTime <= currentMax) {
-          // Use the hover dot's actual time value (grid point)
           focalTime = hoverDotTime;
-          
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'crestcurve.js:358',message:'Using hover dot time as focal point',data:{focalTime:focalTime,hoverDotTime:hoverDotTime},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-          // #endregion
         } else {
           // Fallback: Get mouse position from source event if available
           let focalX = currentMouseX;
@@ -473,12 +464,7 @@
             }
           }
           
-          // Calculate focal time using CURRENT domain (before zoom)
           focalTime = x.invert(focalX);
-          
-          // #region agent log
-          fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'crestcurve.js:371',message:'Using mouse position as focal point',data:{focalTime:focalTime,focalX:focalX},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-          // #endregion
         }
         
         // Calculate new range based on zoom scale
@@ -507,11 +493,6 @@
         }
         
         x.domain([newMin, newMax]);
-        
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'crestcurve.js:400',message:'Domain updated after zoom',data:{focalTime:focalTime,newDomain:[newMin,newMax],focalTimeInNewDomain:x(focalTime)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-        // #endregion
-        
         redraw();
       });
 
@@ -525,9 +506,6 @@
     });
   }
 
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'crestcurve.js:register:entry',message:'Registering crest module',data:{name:NAME},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-  // #endregion
   window.TrueNorthVizzes = window.TrueNorthVizzes || {};
   window.TrueNorthVizzes[NAME] = {
     mount,
@@ -536,7 +514,4 @@
       // This method exists for API consistency with other vizzes.
     }
   };
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/eb07f81d-6c3f-4bc4-8cad-9d6f15e42302',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'crestcurve.js:register:registered',message:'Crest module registered',data:{name:NAME,hasMount:!!window.TrueNorthVizzes?.[NAME]?.mount},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-  // #endregion
 })();

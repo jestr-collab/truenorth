@@ -8,7 +8,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Inter:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
     <style>
       :root {
@@ -91,87 +91,213 @@
         width: 100%;
         overflow-y: auto;
         background: var(--bg-primary);
+        padding-top: 72px; /* clear fixed navbar */
       }
 
-      .content-header {
-        padding: 16px 40px;
+      /* Fixed top navbar */
+      .site-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
         background: var(--bg-primary);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 12px;
+        padding: 12px 24px;
       }
 
-      .header-top {
+      .navbar-container {
+        max-width: 960px;
+        margin: 0 auto;
+        border: 1px solid var(--border);
+        padding: 12px 20px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        width: 100%;
+        flex-wrap: wrap;
+        gap: 12px;
       }
 
-      .header-left {
-        flex: 1;
-      }
-
-      .content-header h1 {
-        font-size: 24px;
-        font-weight: 700;
-        color: var(--text-primary);
-        margin-bottom: 4px;
-        letter-spacing: -0.02em;
-        line-height: 1.2;
-      }
-
-      .content-header p {
-        font-size: 13px;
-        color: var(--text-secondary);
-        letter-spacing: -0.01em;
-        line-height: 1.5;
-        font-weight: 400;
-      }
-
-      .header-nav {
-        display: flex;
-        gap: 20px;
-        align-items: center;
-      }
-
-      .header-nav a {
-        font-size: 14px;
+      .navbar-brand {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 12px;
         font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-primary);
+        text-decoration: none;
+      }
+
+      .navbar-nav {
+        display: flex;
+        gap: 24px;
+        align-items: center;
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 11px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+      }
+
+      .navbar-nav a {
         color: var(--text-secondary);
         text-decoration: none;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        letter-spacing: -0.01em;
-        line-height: 1.4;
-        position: relative;
-        padding: 4px 0;
+        transition: color 0.2s ease;
       }
 
-      .header-nav a::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 0;
-        height: 2px;
-        background: var(--accent);
-        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-
-      .header-nav a:hover::after {
-        width: 100%;
-      }
-
-      .header-nav a:hover {
+      .navbar-nav a:hover {
         color: var(--text-primary);
-        transform: translateY(-1px);
       }
 
-      .header-actions {
+      .navbar-actions {
         display: flex;
         gap: 12px;
         align-items: center;
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 11px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .navbar-actions .btn {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      /* Hero section */
+      .hero {
+        position: relative;
+        padding: 64px 40px 80px;
+        max-width: 960px;
+        margin: 0 auto;
+        overflow: hidden;
+      }
+
+      .hero-glow {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        transition: opacity 0.12s ease-out;
+      }
+
+      .hero-glow-blob {
+        position: absolute;
+        width: 420px;
+        height: 420px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(0, 128, 128, 0.14) 0%, rgba(0, 128, 128, 0.05) 35%, transparent 65%);
+        filter: blur(64px);
+        transition: filter 0.15s ease-out;
+      }
+
+      .hero-glow-blob:nth-child(1) { left: -180px;  top: 50%; transform: translateY(-50%); }
+      .hero-glow-blob:nth-child(2) { right: -180px; top: 50%; transform: translateY(-50%); }
+
+      .hero-inner {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 48px;
+        align-items: start;
+      }
+
+      .hero-content h1 {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: clamp(2.25rem, 4vw, 3.25rem);
+        font-weight: 600;
+        line-height: 1.2;
+        color: var(--text-primary);
+        margin: 0 0 16px 0;
+      }
+
+      .hero-content .hero-sub {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--text-secondary);
+        margin: 0 0 12px 0;
+      }
+
+      .hero-content .hero-desc {
+        font-size: 14px;
+        line-height: 1.6;
+        color: var(--text-primary);
+        margin: 0 0 24px 0;
+        max-width: 420px;
+      }
+
+      .btn-hero-primary {
+        display: inline-block;
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 12px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        background: var(--text-primary);
+        color: #fff;
+        border: none;
+        padding: 14px 28px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.2s ease, transform 0.2s ease;
+        text-decoration: none;
+      }
+
+      .btn-hero-primary:hover {
+        background: #333;
+        transform: translateY(-1px);
+      }
+
+      .hero-form{
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .hero-card{
+        width: 100%;
+        max-width: 360px;
+        padding: 18px 18px 16px;
+        margin-bottom: 0;
+        border-radius: 14px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      }
+
+      .hero-card:hover{
+        transform: none;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      }
+
+      .hero-card .form-label{
+        font-family: 'IBM Plex Mono', monospace;
+        letter-spacing: 0.12em;
+      }
+
+      .hero-card .form-input{
+        padding: 10px 12px;
+        border-radius: 10px;
+        font-size: 13px;
+      }
+
+      .hero-card .upload-files-row{
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      @media (max-width: 768px) {
+        .hero-inner {
+          grid-template-columns: 1fr;
+        }
+        .hero-form{
+          justify-content: flex-start;
+        }
+        .hero-card{
+          max-width: 520px;
+        }
       }
 
       .content-body {
@@ -282,6 +408,7 @@
       .upload-file-group {
         flex: 1;
         margin-bottom: 0;
+        min-width: 0;
       }
 
       .analyze-button-wrapper {
@@ -299,40 +426,55 @@
 
       .file-input-wrapper {
         position: relative;
+        min-height: 44px;
+        min-width: 0;
+        overflow: hidden;
       }
 
       .file-input-wrapper input[type="file"] {
+        position: absolute;
+        top: 0;
+        left: 0;
         width: 100%;
-        padding: 14px 18px;
-        font-size: 15px;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+        z-index: 1;
+      }
+
+      .file-input-trigger {
+        display: block;
+        padding: 12px 16px;
+        font-size: 13px;
         background: var(--bg-tertiary);
         border: 1.5px solid var(--border);
-        border-radius: 12px;
+        border-radius: 10px;
         color: var(--text-secondary);
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        letter-spacing: -0.01em;
-        line-height: 1.5;
-        font-weight: 400;
-        font-family: 'DM Sans', 'Inter', sans-serif;
+        transition: border-color 0.2s ease, background 0.2s ease;
+        font-family: 'IBM Plex Mono', monospace;
+        letter-spacing: 0.02em;
+        pointer-events: none;
+        min-width: 0;
+        overflow: hidden;
       }
 
-      .file-input-wrapper input[type="file"]:hover {
+      .file-input-wrapper:hover .file-input-trigger {
         border-color: var(--border-hover);
         background: var(--bg-primary);
-        transform: translateY(-1px);
       }
 
-      .file-input-wrapper input[type="file"]:hover {
-        border-color: var(--border-hover);
-      }
-
-      .file-input-wrapper input[type="file"]:focus {
+      .file-input-wrapper:focus-within .file-input-trigger {
         outline: none;
         border-color: var(--accent);
-        box-shadow: 0 0 0 4px var(--accent-light), 0 2px 8px rgba(0, 128, 128, 0.1);
-        background: var(--bg-primary);
-        transform: translateY(-1px);
+        box-shadow: 0 0 0 3px var(--accent-light);
+      }
+
+      .file-input-text {
+        display: block;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       /* Buttons */
@@ -387,7 +529,9 @@
       }
 
       .btn-primary:disabled {
-        opacity: 0.5;
+        background: var(--accent);
+        color: white;
+        box-shadow: 0 2px 6px rgba(0, 128, 128, 0.25);
         cursor: not-allowed;
         transform: none;
       }
@@ -599,11 +743,19 @@
         left: 22px;
       }
 
-      /* Features Section */
+      /* Features Section: left quadrant = features, right quadrant = animation */
       .features-section {
         margin-top: 64px;
         padding-top: 48px;
         border-top: 1px solid var(--border);
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        align-items: start;
+      }
+
+      .features-left {
+        min-width: 0;
       }
 
       .features-title {
@@ -611,7 +763,7 @@
         font-weight: 700;
         color: var(--text-primary);
         margin-bottom: 48px;
-        text-align: center;
+        text-align: left;
         letter-spacing: -0.02em;
         line-height: 1.2;
       }
@@ -620,8 +772,31 @@
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 24px;
-        max-width: 1000px;
-        margin: 0 auto;
+        max-width: none;
+      }
+
+      .features-right {
+        min-width: 0;
+        position: relative;
+      }
+
+      .features-right .features-title {
+        margin-bottom: 48px;
+      }
+
+      .features-right-video-wrap {
+        border-radius: 16px;
+        overflow: hidden;
+        background: var(--bg-tertiary);
+      }
+
+      .features-right video {
+        width: 100%;
+        height: 100%;
+        min-height: 280px;
+        object-fit: cover;
+        display: block;
+        border-radius: 16px;
       }
 
       .feature-block {
@@ -675,31 +850,91 @@
         font-weight: 400;
       }
 
+      /* Why section: same container width as Features/Demo, inner column left-aligned */
+      .why-section {
+        margin-top: 0;
+        padding-top: 72px;
+        padding-bottom: 72px;
+        border-top: 1px solid var(--border);
+        box-sizing: border-box;
+        width: 100%;
+      }
+
+      .why-section-inner {
+        max-width: 100%;
+        box-sizing: border-box;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 40px;
+        align-items: start;
+      }
+
+      .why-subsection {
+        margin-bottom: 0;
+      }
+
+      .why-subsection h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 20px;
+        letter-spacing: -0.015em;
+        line-height: 1.3;
+      }
+
+      .why-subsection p {
+        font-size: 14px;
+        line-height: 1.75;
+        color: var(--text-secondary);
+        margin: 0 0 16px 0;
+        letter-spacing: -0.01em;
+        font-weight: 400;
+      }
+
+      .why-subsection p:last-child {
+        margin-bottom: 0;
+      }
+
+      .why-quote-list {
+        margin: 16px 0 20px 0;
+        padding: 12px 0 12px 16px;
+        border-left: 3px solid var(--border);
+        list-style: none;
+      }
+
+      .why-quote-list li {
+        font-size: 14px;
+        line-height: 1.75;
+        color: var(--text-secondary);
+        letter-spacing: -0.01em;
+        margin-bottom: 6px;
+      }
+
+      .why-quote-list li:last-child {
+        margin-bottom: 0;
+      }
+
       /* Responsive */
       @media (max-width: 768px) {
         .content-body {
           padding: 24px;
         }
 
-        .content-header {
-          padding: 24px;
+        .site-header {
+          padding: 10px 16px;
         }
 
-        .header-top {
+        .navbar-container {
           flex-direction: column;
           align-items: flex-start;
-          gap: 16px;
         }
 
-        .header-nav {
-          gap: 20px;
-          flex-wrap: wrap;
-          justify-content: center;
+        .hero {
+          padding: 48px 24px 64px;
         }
 
-        .header-actions {
-          width: 100%;
-          justify-content: flex-end;
+        .features-section {
+          grid-template-columns: 1fr;
         }
 
         .features-grid {
@@ -709,101 +944,200 @@
         .features-title {
           font-size: 24px;
         }
+
+        .why-section {
+          padding-top: 56px;
+          padding-bottom: 56px;
+        }
+
+        .why-section-inner {
+          grid-template-columns: 1fr;
+        }
       }
     </style>
   </head>
 
   <body>
+    <div id="tnApiUrlDebug" style="position:fixed;top:8px;right:12px;font-size:11px;color:#6b7280;font-family:monospace;z-index:9999;pointer-events:none;"></div>
     <div class="dashboard">
       <!-- Main Content -->
       <main class="main-content">
-        <!-- Upload Section -->
-        <section id="upload-section" class="content-section">
-          <div class="content-header">
-            <div class="header-top">
-            <div class="header-left">
-              <h1>Mix Affinity</h1>
-              <p>Upload audio files and start analyzing</p>
-            </div>
-              <div class="header-actions">
-                <button class="btn btn-secondary">Sign Up</button>
-                <button class="btn btn-primary">Login</button>
-              </div>
-            </div>
-            <nav class="header-nav">
+        <!-- Fixed top navbar -->
+        <header class="site-header">
+          <div class="navbar-container">
+            <a href="#" class="navbar-brand">Mix Affinity</a>
+            <nav class="navbar-nav">
               <a href="docs.html">Documentation</a>
               <a href="#pricing">Pricing</a>
               <a href="#about">About Us</a>
             </nav>
-          </div>
-          <div class="content-body">
-            <div class="card">
-              <div class="form-group session-name-wrapper">
-                <label class="form-label" for="sessionName">Session Name <span style="color: #dc2626;">*</span></label>
-                <input 
-                  type="text" 
-                  id="sessionName" 
-                  class="form-input session-name-input" 
-                  placeholder="Enter session name"
-                  required
-                />
-              </div>
-              
-              <div class="upload-files-row">
-                <div class="form-group upload-file-group">
-                  <label class="form-label" for="mainFile">Main Track</label>
-                  <div class="file-input-wrapper">
-                    <input type="file" id="mainFile" accept=".wav" />
-                  </div>
-                </div>
-                <div class="form-group upload-file-group">
-                  <label class="form-label" for="refFile">Reference <span style="color: var(--text-tertiary); font-weight: 400;">(optional)</span></label>
-                  <div class="file-input-wrapper">
-                    <input type="file" id="refFile" accept=".wav" />
-                  </div>
-                </div>
-              </div>
-              
-              <div class="analyze-button-wrapper">
-                <button id="btnUpload" class="btn btn-primary">
-                     Analyze
-                </button>
-              </div>
-              
-              <div id="uploadStatus" class="status"></div>
+            <div class="navbar-actions">
+              <button class="btn btn-secondary">Sign Up</button>
+              <button class="btn btn-primary">Login</button>
             </div>
+          </div>
+        </header>
 
-            <!-- Features Section -->
-            <div class="features-section">
-              <h2 class="features-title">Features</h2>
-              <div class="features-grid">
-                <div class="feature-block">
-                  <h3>Spatial Fingerprint</h3>
-                  <p>Visualize stereo field positioning, presence, and spatial characteristics of your audio tracks with interactive scatter plots.</p>
+        <!-- Hero + Upload -->
+        <section id="upload-section" class="hero">
+          <div id="heroGlow" class="hero-glow" aria-hidden="true">
+            <span class="hero-glow-blob"></span>
+            <span class="hero-glow-blob"></span>
+          </div>
+          <div class="hero-inner">
+            <div class="hero-content">
+              <h1>Mix Affinity</h1>
+              <p class="hero-sub">Upload audio files and start analyzing</p>
+              <p class="hero-desc">Mix Affinity is an audio analysis platform that lets producers compare their track against a professional reference in real time. It extracts mix-level features like loudness, low-end energy, stereo width, transients, and spatial balance, then visualizes the statistical differences clearly so you can see exactly where your mix diverges. Instead of guessing with your ears alone, collect objective insights into what makes a track feel polished versus amateur.</p>
+              <a href="#sessionName" class="btn-hero-primary">Get started</a>
+            </div>
+            <div class="hero-form">
+              <div class="card hero-card">
+                <div class="form-group api-endpoint-wrapper" style="margin-bottom:12px;">
+                  <label class="form-label" for="apiEndpointInput">API Endpoint</label>
+                  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                    <input type="text" id="apiEndpointInput" class="form-input" placeholder="http://localhost:8000 or https://truenorth.onrender.com" style="flex:1;min-width:200px;" />
+                    <button type="button" id="apiEndpointSave" class="btn btn-secondary">Save</button>
+                  </div>
+                  <div id="apiEndpointDisplay" style="font-size:12px;color:var(--text-secondary);margin-top:6px;"></div>
                 </div>
-                <div class="feature-block">
-                  <h3>Loudness Analysis</h3>
-                  <p>Measure and compare LUFS levels to ensure your tracks meet industry standards and maintain consistent loudness across your mix.</p>
+
+                <div class="form-group session-name-wrapper">
+                  <label class="form-label" for="sessionName">Session Name <span style="color: #dc2626;">*</span></label>
+                  <input 
+                    type="text" 
+                    id="sessionName" 
+                    class="form-input session-name-input" 
+                    placeholder="Enter session name"
+                    required
+                  />
                 </div>
-                <div class="feature-block">
-                  <h3>Crest Factor</h3>
-                  <p>Analyze dynamic range and peak-to-average ratios for optimal mastering decisions and better understanding of your track's dynamics.</p>
+                
+                <div class="upload-files-row">
+                  <div class="form-group upload-file-group">
+                    <label class="form-label" for="mainFile">Main Track</label>
+                    <div class="file-input-wrapper">
+                      <label class="file-input-trigger" for="mainFile">
+                        <span class="file-input-text" id="mainFileText">Choose file</span>
+                      </label>
+                      <input type="file" id="mainFile" accept=".wav" />
+                    </div>
+                  </div>
+                  <div class="form-group upload-file-group">
+                    <label class="form-label" for="refFile">Reference</label>
+                    <div class="file-input-wrapper">
+                      <label class="file-input-trigger" for="refFile">
+                        <span class="file-input-text" id="refFileText">Choose file</span>
+                      </label>
+                      <input type="file" id="refFile" accept=".wav" />
+                    </div>
+                  </div>
                 </div>
-                <div class="feature-block">
-                  <h3>Low-End Analysis</h3>
-                  <p>Examine sub-bass frequencies and low-end energy distribution across your tracks to ensure proper balance and clarity.</p>
+                
+                <div class="analyze-button-wrapper">
+                  <button type="button" id="analyzeBtn" class="btn btn-primary" disabled>
+                       Analyze
+                  </button>
                 </div>
+                
+                <div id="uploadStatus" class="status"></div>
               </div>
             </div>
           </div>
         </section>
 
+        <div class="content-body">
+
+            <!-- Features Section -->
+            <div class="features-section">
+              <div class="features-left">
+                <h2 class="features-title">Features</h2>
+                <div class="features-grid">
+                  <div class="feature-block">
+                    <h3>Spatial Fingerprint</h3>
+                    <p>Visualize stereo field positioning, presence, and spatial characteristics of your audio tracks with interactive scatter plots.</p>
+                  </div>
+                  <div class="feature-block">
+                    <h3>Loudness Analysis</h3>
+                    <p>Measure and compare LUFS levels to ensure your tracks meet industry standards and maintain consistent loudness across your mix.</p>
+                  </div>
+                  <div class="feature-block">
+                    <h3>Crest Factor</h3>
+                    <p>Analyze dynamic range and peak-to-average ratios for optimal mastering decisions and better understanding of your track's dynamics.</p>
+                  </div>
+                  <div class="feature-block">
+                    <h3>Low-End Analysis</h3>
+                    <p>Examine sub-bass frequencies and low-end energy distribution across your tracks to ensure proper balance and clarity.</p>
+                  </div>
+                </div>
+              </div>
+              <div class="features-right" aria-hidden="true">
+                <h2 class="features-title">Visualize the difference</h2>
+                <div class="features-right-video-wrap">
+                  <video src="./record.mp4" autoplay muted loop playsinline></video>
+                </div>
+              </div>
+            </div>
+
+            <!-- Why section -->
+            <section id="why" class="why-section">
+              <div class="why-section-inner">
+              <div class="why-subsection">
+                <h3>Why MixAffinity Exists</h3>
+                <p>Most mixes get to 80–90% and then stall.</p>
+                <p>Everything sounds close. Nothing sounds wrong.<br>But something still feels off — and you can't explain why.</p>
+                <p>That's where I kept getting stuck.</p>
+                <p>Not because I didn't try hard enough.<br>Not because I didn't have plugins.<br>But because I didn't have the vocabulary to describe what I was hearing.</p>
+              </div>
+              <div class="why-subsection">
+                <h3>Turning the Abstract Into Something Measurable</h3>
+                <p>MixAffinity doesn't tell you what's right or wrong.</p>
+                <p>It shows you how your mix behaves — compared to the reference you chose.</p>
+                <p>Where loudness shifts.<br>Where density changes.<br>Where low end is stable — or drifting.<br>Where width expands — or collapses.</p>
+                <p>The goal isn't to replace judgment.<br>It's to remove guesswork.</p>
+              </div>
+              <div class="why-subsection">
+                <h3>Built for Producers Who Care</h3>
+                <p>This tool isn't for chasing trends.</p>
+                <p>It's for people who take their releases seriously —<br>who want to understand why certain tracks feel the way they do,<br>and who want their own mixes to feel intentional.</p>
+                <p>Great mixes shouldn't be a draw of luck.</p>
+                <p>They should be the result of analysis, attention, and clarity.</p>
+                <p>Every person committing to releasing music deserves to feel confident in what they're putting out — and to know that the quality they admire in other records is something they can study and reproduce.</p>
+              </div>
+              </div>
+            </section>
+          </div>
+
       </main>
     </div>
 
+    <script src="./apiConfig.js"></script>
     <script src="./uploadHandler.js"></script>
     <script>
-      // Navigation removed - sidebar no longer exists
+      document.addEventListener("DOMContentLoaded", function () {
+      // Hero glow: fade out as user scrolls toward Features (IntersectionObserver)
+      (function () {
+        var hero = document.getElementById("upload-section");
+        var glow = document.getElementById("heroGlow");
+        if (!hero || !glow) return;
+        var blobEls = glow.querySelectorAll(".hero-glow-blob");
+        var observer = new IntersectionObserver(
+          function (entries) {
+            var e = entries[0];
+            if (!e) return;
+            var ratio = Math.max(0, e.intersectionRatio);
+            requestAnimationFrame(function () {
+              glow.style.opacity = String(ratio);
+              var blurPx = 64 + (1 - ratio) * 20;
+              blobEls.forEach(function (blob) {
+                blob.style.filter = "blur(" + blurPx + "px)";
+              });
+            });
+          },
+          { root: null, rootMargin: "0px", threshold: [0, 0.25, 0.5, 0.75, 1] }
+        );
+        observer.observe(hero);
+      })();
 
       // Settings toggles
       document.querySelectorAll('.toggle').forEach(toggle => {
@@ -889,22 +1223,50 @@
       window.loadSession = loadSession;
       window.deleteSession = deleteSession;
 
-      // Upload handler
+      // Upload handler (API base from getApiBaseUrl: ?api=, localStorage TN_API_BASE_URL, window.TN_API_BASE_URL, or localhost:8000)
+      var apiBase = typeof getApiBaseUrl !== "undefined" ? getApiBaseUrl() : "http://localhost:8000";
+      var debugEl = document.getElementById("tnApiUrlDebug");
+      if (debugEl) debugEl.textContent = "API: " + apiBase;
+      var apiEndpointInput = document.getElementById("apiEndpointInput");
+      var apiEndpointDisplay = document.getElementById("apiEndpointDisplay");
+      if (apiEndpointInput) apiEndpointInput.value = apiBase;
+      if (apiEndpointDisplay) apiEndpointDisplay.textContent = "Current: " + apiBase;
+      document.getElementById("apiEndpointSave")?.addEventListener("click", function () {
+        var input = document.getElementById("apiEndpointInput");
+        if (!input) return;
+        var val = (input.value || "").trim().replace(/\/+$/, "");
+        if (!val.startsWith("http://") && !val.startsWith("https://")) {
+          alert("API endpoint must start with http:// or https://");
+          return;
+        }
+        try {
+          localStorage.setItem("TN_API_BASE_URL", val);
+          if (debugEl) debugEl.textContent = "API: " + val;
+          if (apiEndpointDisplay) apiEndpointDisplay.textContent = "Current: " + val;
+          if (typeof uploadHandler !== "undefined") uploadHandler.apiBaseUrl = val;
+        } catch (e) {
+          alert("Could not save: " + (e && e.message ? e.message : String(e)));
+        }
+      });
       const uploadHandler = new TrueNorthUploadHandler({
-        apiBaseUrl: document.getElementById('apiEndpoint')?.value || "http://localhost:8000",
+        apiBaseUrl: apiBase,
         endpoint: "/spatial-fingerprint",
         onLoading: (loading) => {
           const statusEl = document.getElementById("uploadStatus");
-          const btnUpload = document.getElementById("btnUpload");
-          
           if (statusEl) {
             statusEl.className = loading ? "status loading" : "status";
             statusEl.textContent = loading ? "Analyzing audio files..." : "";
           }
           
-          if (btnUpload) {
-            btnUpload.disabled = loading;
-            btnUpload.textContent = loading ? "Analyzing..." : "  Analyze";
+          var analyzeBtn = document.getElementById("analyzeBtn");
+          if (analyzeBtn) {
+            analyzeBtn.disabled = loading;
+            analyzeBtn.textContent = loading ? "Analyzing..." : "  Analyze";
+            if (!loading) {
+              const main = document.getElementById("mainFile")?.files?.[0];
+              const ref = document.getElementById("refFile")?.files?.[0];
+              analyzeBtn.disabled = !(main && ref);
+            }
           }
         },
         onSuccess: (data) => {
@@ -1303,33 +1665,126 @@
         }
       });
 
-      const btnUpload = document.getElementById("btnUpload");
-      const mainFileInput = document.getElementById("mainFile");
-      const refFileInput = document.getElementById("refFile");
+      var mainFileInput = document.getElementById("mainFile");
+      var refFileInput = document.getElementById("refFile");
+      var analyzeBtn = document.getElementById("analyzeBtn");
 
-      btnUpload?.addEventListener("click", async () => {
-        const sessionName = document.getElementById('sessionName')?.value?.trim();
-        if (!sessionName) {
-          alert("Please enter a session name");
-          document.getElementById('sessionName')?.focus();
-          return;
+      function updateAnalyzeButton() {
+        var main = mainFileInput?.files?.[0];
+        var ref = refFileInput?.files?.[0];
+        if (analyzeBtn) analyzeBtn.disabled = !(main && ref);
+      }
+      function updateFileInputLabel(input, textEl) {
+        if (!textEl) return;
+        var file = input?.files?.[0];
+        textEl.textContent = file ? file.name : "Choose file";
+      }
+      mainFileInput?.addEventListener("change", function () {
+        updateAnalyzeButton();
+        updateFileInputLabel(mainFileInput, document.getElementById("mainFileText"));
+      });
+      refFileInput?.addEventListener("change", function () {
+        updateAnalyzeButton();
+        updateFileInputLabel(refFileInput, document.getElementById("refFileText"));
+      });
+      updateAnalyzeButton();
+      updateFileInputLabel(mainFileInput, document.getElementById("mainFileText"));
+      updateFileInputLabel(refFileInput, document.getElementById("refFileText"));
+
+      if (analyzeBtn) {
+        analyzeBtn.addEventListener("click", async function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+
+          var mainFile = mainFileInput?.files?.[0];
+          if (!mainFile) {
+            alert("Please select a main track file");
+            var uploadStatus = document.getElementById("uploadStatus");
+            if (uploadStatus) {
+              uploadStatus.className = "status error";
+              uploadStatus.textContent = "Please select a main track file.";
+            }
+            return;
+          }
+
+          var refFile = refFileInput?.files?.[0];
+          var sessionName = document.getElementById('sessionName')?.value?.trim();
+          if (!sessionName) {
+            alert("Please enter a session name");
+            document.getElementById('sessionName')?.focus();
+            return;
+          }
+          if (!refFile) {
+            alert("Please select a reference file");
+            var uploadStatus = document.getElementById("uploadStatus");
+            if (uploadStatus) {
+              uploadStatus.className = "status error";
+              uploadStatus.textContent = "Please select a reference file.";
+            }
+            return;
+          }
+
+        const MAX_DURATION_SEC = 300; // 5 minutes
+        function getAudioDuration(file) {
+          return new Promise((resolve, reject) => {
+            const url = URL.createObjectURL(file);
+            const audio = new Audio();
+            audio.onloadedmetadata = () => {
+              URL.revokeObjectURL(url);
+              resolve(audio.duration);
+            };
+            audio.onerror = () => {
+              URL.revokeObjectURL(url);
+              reject(new Error("Could not read audio file"));
+            };
+            audio.src = url;
+          });
+        }
+        function formatDuration(sec) {
+          const m = Math.floor(sec / 60);
+          const s = Math.floor(sec % 60);
+          return m + ":" + String(s).padStart(2, "0");
         }
 
-        const mainFile = mainFileInput?.files?.[0];
-        if (!mainFile) {
-          alert("Please select a main track file");
+        try {
+          const [mainDur, refDur] = await Promise.all([
+            getAudioDuration(mainFile),
+            getAudioDuration(refFile)
+          ]);
+          const mainOver = mainDur >= MAX_DURATION_SEC;
+          const refOver = refDur >= MAX_DURATION_SEC;
+          if (mainOver || refOver) {
+            const which = mainOver && refOver ? "Both tracks" : (mainOver ? "Main track" : "Reference");
+            const dur = mainOver && refOver ? Math.max(mainDur, refDur) : (mainOver ? mainDur : refDur);
+            alert(
+              "Tracks must be under 5 minutes.\n\n" +
+              which + " " + (mainOver && refOver ? "are" : "is") + " " + formatDuration(dur) + ". " +
+              "Please use a shorter clip."
+            );
+            return;
+          }
+        } catch (e) {
+          if (e.message && e.message.includes("Could not read")) {
+            alert("Could not read one of the audio files. Please use a valid WAV file.");
+          }
           return;
         }
 
         try {
-          const refFile = refFileInput?.files?.[0] || null;
-          const apiUrl = document.getElementById('apiEndpoint')?.value || "http://localhost:8000";
-          uploadHandler.apiBaseUrl = apiUrl;
+          uploadHandler.apiBaseUrl = typeof getApiBaseUrl !== "undefined" ? getApiBaseUrl() : "http://localhost:8000";
+          var debugEl = document.getElementById("tnApiUrlDebug");
+          if (debugEl) debugEl.textContent = "API: " + uploadHandler.apiBaseUrl;
           await uploadHandler.uploadAndAnalyze(mainFile, refFile);
         } catch (err) {
-          // Error already handled by onError callback
+          var statusEl = document.getElementById("uploadStatus");
+          if (statusEl) {
+            statusEl.className = "status error";
+            statusEl.textContent = "Error: " + (err && err.message ? err.message : String(err));
+          }
+          console.error("Upload error:", err);
         }
       });
+      }
 
       // Load sessions on page load
       loadSessions();
@@ -1342,6 +1797,7 @@
       // Track failed resource loads
       window.addEventListener('unhandledrejection', function(event) {
         // Error logging can be added here if needed
+      });
       });
     </script>
   </body>
