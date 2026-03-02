@@ -8,6 +8,7 @@ import time
 
 import librosa
 import numpy as np
+import soundfile as sf
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
@@ -27,12 +28,13 @@ from analyzers import (
 
 app = FastAPI()
 
-# CORS: Live Server origins + optional env (e.g. CORS_ORIGINS=https://myapp.com,https://app.example.com)
+# CORS: Live Server origins + Render + optional env
 _cors_origins = [
-    "http://127.0.0.1:5501",
     "http://127.0.0.1:5500",
-    "http://localhost:5501",
+    "http://127.0.0.1:5501",
     "http://localhost:5500",
+    "http://localhost:5501",
+    "https://truenorth.onrender.com",
 ]
 _env_origins = os.environ.get("CORS_ORIGINS") or os.environ.get("CORS_ORIGIN")
 if _env_origins:
@@ -60,12 +62,13 @@ async def health():
     return {"status": "ok"}
 
 
-# ---------- core helper: run analyzers on ONE file ----------
+# ---------- global caps (Render 512MB-safe) ----------
 
-# Cap analyzed duration (seconds) to limit memory on constrained hosts (e.g. Render 512MB).
-# Set MAX_ANALYZE_SECONDS in Render env vars if you need a different limit (default 300 = 5 min).
-MAX_ANALYZE_SECONDS = int(os.environ.get("MAX_ANALYZE_SECONDS", "300"))
-ANALYSIS_SR = 22050  # Downsample for analysis to save memory
+MAX_ANALYZE_SECONDS = float(os.environ.get("FP_MAX_DURATION_SEC", "300"))
+ANALYSIS_SR = int(os.environ.get("ANALYSIS_SR", "22050"))
+
+
+# ---------- core helper: run analyzers on ONE file ----------
 
 
 async def run_all_analyzers(upload_file: UploadFile) -> dict:
@@ -87,37 +90,35 @@ async def run_all_analyzers(upload_file: UploadFile) -> dict:
         tmp.write(content)
 
     try:
-        # Load audio downsampled to ANALYSIS_SR (memory-safe), mono=False for stereo width
+        # Duration without loading full file
         try:
-            y, sr = librosa.load(tmp_path, sr=ANALYSIS_SR, mono=False)
+            info = sf.info(tmp_path)
+            file_duration_sec = float(info.frames / info.samplerate) if info.samplerate else 0.0
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Could not read audio file: {e}")
+        analysis_trimmed = file_duration_sec > MAX_ANALYZE_SECONDS
+        analyzed_duration_sec = min(file_duration_sec, MAX_ANALYZE_SECONDS)
+
+        # Load capped to MAX_ANALYZE_SECONDS (no full-file load)
+        try:
+            y, sr = librosa.load(
+                tmp_path,
+                sr=ANALYSIS_SR,
+                mono=False,
+                duration=MAX_ANALYZE_SECONDS,
+                dtype=np.float32,
+            )
         except Exception as e:
             raise HTTPException(
                 status_code=500,
                 detail=f"Could not read audio file: {e}",
             )
 
-        y = np.asarray(y, dtype=np.float32)
-
-        # mono mixdown for mono-based features (float32)
         if y.ndim == 1:
             y_mono = y
         else:
             y_mono = np.mean(y, axis=0).astype(np.float32)
-
         full_duration = librosa.get_duration(y=y_mono, sr=sr)
-        max_samples = int(sr * MAX_ANALYZE_SECONDS)
-        analysis_trimmed = False
-        analyzed_duration_sec = float(full_duration)
-
-        if y_mono.size > max_samples:
-            analysis_trimmed = True
-            analyzed_duration_sec = float(max_samples / sr)
-            n = max_samples
-            y_mono = y_mono[:n]
-            if y.ndim == 1:
-                y = y[:n]
-            else:
-                y = y[:, :n].copy()
 
         # Run existing analyzers on (possibly trimmed) buffers
         lufs = compute_lufs(y_mono, sr)
@@ -139,9 +140,9 @@ async def run_all_analyzers(upload_file: UploadFile) -> dict:
         return {
             "filename": filename,
             "sample_rate": int(sr),
-            "duration_sec": float(full_duration),
+            "duration_sec": float(file_duration_sec),
             "analysis_trimmed": analysis_trimmed,
-            "analyzed_duration_sec": analyzed_duration_sec,
+            "analyzed_duration_sec": float(analyzed_duration_sec),
             "features": features,
         }
     finally:
@@ -270,6 +271,22 @@ async def spatial_fingerprint(
                 tmp_ref.write(await ref_file.read())
 
         try:
+            # --- duration without loading (memory-friendly logs) ---
+            def _file_duration_sec(path: str) -> float:
+                inf = sf.info(path)
+                return float(inf.frames / inf.samplerate) if inf.samplerate else 0.0
+
+            main_duration_sec = _file_duration_sec(main_path)
+            main_trimmed = main_duration_sec > MAX_ANALYZE_SECONDS
+            main_analyzed_sec = min(main_duration_sec, MAX_ANALYZE_SECONDS)
+            print(f"[spatial-fingerprint] main: file_duration_sec={main_duration_sec:.2f}, capped_sec={MAX_ANALYZE_SECONDS}, trimmed={main_trimmed}")
+            if ref_path:
+                ref_duration_sec = _file_duration_sec(ref_path)
+                ref_trimmed = ref_duration_sec > MAX_ANALYZE_SECONDS
+                ref_analyzed_sec = min(ref_duration_sec, MAX_ANALYZE_SECONDS)
+                print(f"[spatial-fingerprint] ref: file_duration_sec={ref_duration_sec:.2f}, capped_sec={MAX_ANALYZE_SECONDS}, trimmed={ref_trimmed}")
+            print(f"[spatial-fingerprint] memory-friendly: sr={ANALYSIS_SR}, duration_cap_sec={MAX_ANALYZE_SECONDS}")
+
             # --- compute fingerprint(s) ---
             main_fp = compute_spatial_fingerprint(
                 main_path,
@@ -285,12 +302,16 @@ async def spatial_fingerprint(
                     settings=settings,
                 )
 
-            # --- compute LUFS + CREST + LOW_END ---
-            # Load stereo for low_end (needs width), then create mono for lufs/crest
-            y_main_stereo, sr_main = librosa.load(main_path, sr=None, mono=False)
-            y_main_stereo = np.asarray(y_main_stereo, dtype=float)
+            # --- compute LUFS + CREST + LOW_END (capped load, no full file) ---
+            y_main_stereo, sr_main = librosa.load(
+                main_path,
+                sr=ANALYSIS_SR,
+                mono=False,
+                duration=MAX_ANALYZE_SECONDS,
+                dtype=np.float32,
+            )
+            y_main_stereo = np.asarray(y_main_stereo, dtype=np.float32)
             y_main_mono = np.mean(y_main_stereo, axis=0) if y_main_stereo.ndim > 1 else y_main_stereo
-            
             main_lufs = compute_lufs(y_main_mono, sr_main)
             main_crest = compute_crest_factor_over_time(y_main_mono, sr_main)
             main_low_end = compute_low_end_over_time(y_main_stereo, sr_main)
@@ -299,10 +320,15 @@ async def spatial_fingerprint(
             ref_crest = None
             ref_low_end = None
             if ref_path:
-                y_ref_stereo, sr_ref = librosa.load(ref_path, sr=None, mono=False)
-                y_ref_stereo = np.asarray(y_ref_stereo, dtype=float)
+                y_ref_stereo, sr_ref = librosa.load(
+                    ref_path,
+                    sr=ANALYSIS_SR,
+                    mono=False,
+                    duration=MAX_ANALYZE_SECONDS,
+                    dtype=np.float32,
+                )
+                y_ref_stereo = np.asarray(y_ref_stereo, dtype=np.float32)
                 y_ref_mono = np.mean(y_ref_stereo, axis=0) if y_ref_stereo.ndim > 1 else y_ref_stereo
-                
                 ref_lufs = compute_lufs(y_ref_mono, sr_ref)
                 ref_crest = compute_crest_factor_over_time(y_ref_mono, sr_ref)
                 ref_low_end = compute_low_end_over_time(y_ref_stereo, sr_ref)
