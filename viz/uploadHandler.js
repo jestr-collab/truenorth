@@ -53,10 +53,13 @@ class TrueNorthUploadHandler {
       console.log("Uploading to:", url);
       console.log("fetch() about to be called", { url, method: "POST" });
 
+      const UPLOAD_TIMEOUT_MS = 240000; // 240s
       const abortController = new AbortController();
+      console.log("Timeout scheduled: request will abort after 240s if no response");
       const timeoutId = setTimeout(function () {
+        console.log("Request timeout: aborting after 240s");
         abortController.abort();
-      }, 90000);
+      }, UPLOAD_TIMEOUT_MS);
 
       let response;
       try {
@@ -72,7 +75,7 @@ class TrueNorthUploadHandler {
       } catch (fetchError) {
         clearTimeout(timeoutId);
         if (fetchError && fetchError.name === "AbortError") {
-          var timeoutErr = new Error("Request timed out after 90 seconds");
+          var timeoutErr = new Error("Request timed out after 240 seconds");
           this.onError(timeoutErr);
           throw timeoutErr;
         }
@@ -106,8 +109,9 @@ class TrueNorthUploadHandler {
         console.error("JSON parse failure", parseErr);
         throw new Error("Invalid JSON in response: " + (parseErr && parseErr.message ? parseErr.message : String(parseErr)));
       }
-      
+
       this.onLoading(false);
+      console.log("Calling onSuccess (data parsed successfully); redirect happens only inside onSuccess after data is stored)");
       this.onSuccess(data);
       return data;
     } catch (err) {

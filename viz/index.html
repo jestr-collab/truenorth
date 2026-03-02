@@ -1270,6 +1270,7 @@
           }
         },
         onSuccess: (data) => {
+          console.log("onSuccess runs (data parsed, storing then redirect)");
           let dataString;
           try {
             dataString = JSON.stringify(data);
@@ -1585,6 +1586,7 @@
                 
                 // Only redirect if we have data
                 if (preRedirectCheck) {
+                  console.log("Redirecting to viz.html (data stored)");
                   window.location.href = "viz.html";
                 } else {
                   alert("Error: Could not save analysis data. The analysis completed but data could not be stored. Please try again or check browser storage settings.");
@@ -1594,6 +1596,7 @@
                 // Try to redirect anyway - maybe data is there
                 try {
                   if (localStorage.getItem("tn:lastResult")) {
+                    console.log("Redirecting to viz.html (data stored, fallback path)");
                     window.location.href = "viz.html";
                   } else {
                     alert(`Error: ${e.message}. Please try uploading again.`);
@@ -1650,6 +1653,7 @@
                 statusEl.textContent = "Analysis complete! Redirecting...";
               }
               setTimeout(() => {
+                console.log("Redirecting to viz.html (data stored, fallback storage path)");
                 window.location.href = "viz.html";
               }, 500);
             }
