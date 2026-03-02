@@ -151,10 +151,9 @@ def compute_spatial_fingerprint_from_path(
     sr = int(info.samplerate)
     file_frames = info.frames
     file_duration_s = float(file_frames / sr) if sr > 0 else 0.0
-    if file_duration_s > max_duration:
-        raise ValueError(f"Track too long: {file_duration_s:.2f}s (max {max_duration:.0f}s)")
+    analysis_trimmed = file_duration_s > max_duration
 
-    # ---- Load only up to cap (never full file) ----
+    # ---- Load only up to cap (trim before any resampling/analysis) ----
     max_frames = int(sr * max_duration)
     data, sr = sf.read(wav_path, frames=max_frames, always_2d=True)
     data = data.astype(np.float32, copy=False).T  # -> (ch, n)
@@ -176,6 +175,7 @@ def compute_spatial_fingerprint_from_path(
 
     mono = 0.5 * (L + R)
     duration_s = float(len(mono) / sr) if sr > 0 else 0.0
+    analyzed_duration_sec = duration_s
 
     if duration_s < float(cfg["guardrails"]["short_file_seconds_min"]):
         warnings.append("short_file_may_reduce_event_quality")
@@ -198,6 +198,8 @@ def compute_spatial_fingerprint_from_path(
         out = {
             "filename": filename,
             "duration_s": duration_s,
+            "analysis_trimmed": analysis_trimmed,
+            "analyzed_duration_sec": analyzed_duration_sec,
             "fingerprint": {"events": [], "summary": {"event_count": 0}},
         }
         if warnings:
@@ -295,6 +297,8 @@ def compute_spatial_fingerprint_from_path(
     out = {
         "filename": filename,
         "duration_s": float(duration_s),
+        "analysis_trimmed": analysis_trimmed,
+        "analyzed_duration_sec": float(analyzed_duration_sec),
         "fingerprint": {"events": events, "summary": summary},
     }
     if warnings:

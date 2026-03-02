@@ -355,8 +355,9 @@ async def spatial_fingerprint(
 
     except HTTPException:
         raise
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
-        # Return full error so Swagger shows it (temporary but useful)
         return JSONResponse(
             status_code=500,
             content={
