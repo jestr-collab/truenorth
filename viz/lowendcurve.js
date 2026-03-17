@@ -187,9 +187,9 @@
         .call(d3.axisLeft(y).ticks(12).tickSize(-innerW).tickFormat(""));
       grid.selectAll(".domain").remove();
       grid.selectAll(".tick line")
-          .attr("stroke", "rgba(15,23,42,0.20)")
-          .attr("stroke-opacity", 0.35)
-          .attr("stroke-width", 1.1);
+          .attr("stroke", "rgba(255,255,255,0.10)")
+          .attr("stroke-opacity", 1)
+          .attr("stroke-width", 1);
 
       // axes with time formatting
       gx.call(d3.axisBottom(x).ticks(7).tickFormat(d => formatTimeMMSS(d)));

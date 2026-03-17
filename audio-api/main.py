@@ -28,14 +28,24 @@ from analyzers import (
 
 app = FastAPI()
 
-# CORS: Live Server origins + Render + optional env
+# -------------------------------------------------------
+# CORS
+# -------------------------------------------------------
+IS_DEV = os.environ.get("ENVIRONMENT") != "production"
+
 _cors_origins = [
     "http://127.0.0.1:5500",
     "http://127.0.0.1:5501",
+    "http://127.0.0.1:5502",
+    "http://127.0.0.1:5503",
     "http://localhost:5500",
     "http://localhost:5501",
+    "http://localhost:5502",
+    "http://localhost:5503",
     "https://truenorth.onrender.com",
 ]
+
+# Pull any extra origins from Render environment variables
 _env_origins = os.environ.get("CORS_ORIGINS") or os.environ.get("CORS_ORIGIN")
 if _env_origins:
     for o in _env_origins.replace(",", " ").split():
@@ -45,12 +55,16 @@ if _env_origins:
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_cors_origins,
+    allow_origins=["*"] if IS_DEV else _cors_origins,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+
+# -------------------------------------------------------
+# Health
+# -------------------------------------------------------
 
 @app.get("/")
 async def root():
@@ -62,44 +76,76 @@ async def health():
     return {"status": "ok"}
 
 
-# ---------- global caps (Render 512MB-safe) ----------
+# -------------------------------------------------------
+# Global caps (Render 512MB-safe)
+# -------------------------------------------------------
 
 MAX_ANALYZE_SECONDS = float(os.environ.get("FP_MAX_DURATION_SEC", "300"))
 ANALYSIS_SR = int(os.environ.get("ANALYSIS_SR", "22050"))
 
 
-# ---------- core helper: run analyzers on ONE file ----------
+# -------------------------------------------------------
+# JSON sanitizer
+# -------------------------------------------------------
 
+def sanitize_for_json(payload: Any, path: str = "", non_finite_paths: list = None) -> Any:
+    """Recursively replace non-finite floats (NaN, Inf, -Inf) with None."""
+    if non_finite_paths is None:
+        non_finite_paths = []
+
+    if isinstance(payload, dict):
+        return {
+            k: sanitize_for_json(v, f"{path}.{k}" if path else k, non_finite_paths)
+            for k, v in payload.items()
+        }
+    elif isinstance(payload, list):
+        return [
+            sanitize_for_json(item, f"{path}[{i}]" if path else f"[{i}]", non_finite_paths)
+            for i, item in enumerate(payload)
+        ]
+    elif isinstance(payload, (float, np.floating)):
+        val = float(payload)
+        if not math.isfinite(val):
+            if len(non_finite_paths) < 10:
+                non_finite_paths.append(f"{path}={val}")
+            return None
+        return val
+    elif isinstance(payload, (int, np.integer)):
+        return int(payload)
+    else:
+        return payload
+
+
+# -------------------------------------------------------
+# Core helper: run all analyzers on ONE file
+# -------------------------------------------------------
 
 async def run_all_analyzers(upload_file: UploadFile) -> dict:
-    """Take an UploadFile, save it temporarily, run ALL features, return JSON."""
+    """Take an UploadFile, save it temporarily, run ALL features, return dict."""
     filename = upload_file.filename or ""
     ext = os.path.splitext(filename)[1].lower()
 
-    # basic extension check (same rules as before)
     if ext not in [".wav", ".flac", ".ogg"]:
         raise HTTPException(
             status_code=400,
             detail="Please upload a WAV/FLAC/OGG file for now (we'll add MP3/M4A support later).",
         )
 
-    # Save to a temp path
     with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
         tmp_path = tmp.name
         content = await upload_file.read()
         tmp.write(content)
 
     try:
-        # Duration without loading full file
         try:
             info = sf.info(tmp_path)
             file_duration_sec = float(info.frames / info.samplerate) if info.samplerate else 0.0
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Could not read audio file: {e}")
+
         analysis_trimmed = file_duration_sec > MAX_ANALYZE_SECONDS
         analyzed_duration_sec = min(file_duration_sec, MAX_ANALYZE_SECONDS)
 
-        # Load capped to MAX_ANALYZE_SECONDS (no full-file load)
         try:
             y, sr = librosa.load(
                 tmp_path,
@@ -109,23 +155,20 @@ async def run_all_analyzers(upload_file: UploadFile) -> dict:
                 dtype=np.float32,
             )
         except Exception as e:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Could not read audio file: {e}",
-            )
+            raise HTTPException(status_code=500, detail=f"Could not read audio file: {e}")
 
         if y.ndim == 1:
             y_mono = y
         else:
             y_mono = np.mean(y, axis=0).astype(np.float32)
+
         full_duration = librosa.get_duration(y=y_mono, sr=sr)
 
-        # Run existing analyzers on (possibly trimmed) buffers
         lufs = compute_lufs(y_mono, sr)
         crest = compute_crest_factor_over_time(y_mono, sr)
         transients = compute_transient_density(y_mono, sr)
         brightness = compute_brightness_over_time(y_mono, sr)
-        low_end = compute_low_end_over_time(y, sr)  # Pass stereo y for width computation
+        low_end = compute_low_end_over_time(y, sr)
         width = compute_stereo_width_over_time(y, sr)
 
         features = {
@@ -152,7 +195,9 @@ async def run_all_analyzers(upload_file: UploadFile) -> dict:
             pass
 
 
-# ---------- main endpoint: single OR reference ----------
+# -------------------------------------------------------
+# /analyze — full feature set, single or with reference
+# -------------------------------------------------------
 
 @app.post("/analyze")
 async def analyze(
@@ -169,6 +214,10 @@ async def analyze(
     payload = sanitize_for_json(payload)
     return JSONResponse(content=jsonable_encoder(payload))
 
+
+# -------------------------------------------------------
+# /analyze/summary — lightweight summary only
+# -------------------------------------------------------
 
 @app.post("/analyze/summary")
 async def analyze_summary(
@@ -199,32 +248,9 @@ async def analyze_summary(
     return JSONResponse(content=jsonable_encoder(payload))
 
 
-# ---------- Spatial Fingerprint endpoint ----------
-
-def sanitize_for_json(payload: Any, path: str = "", non_finite_paths: list = None) -> Any:
-    """
-    Recursively replace non-finite floats (NaN, Inf, -Inf) with None.
-    Tracks first 10 non-finite paths encountered.
-    """
-    if non_finite_paths is None:
-        non_finite_paths = []
-    
-    if isinstance(payload, dict):
-        return {k: sanitize_for_json(v, f"{path}.{k}" if path else k, non_finite_paths) for k, v in payload.items()}
-    elif isinstance(payload, list):
-        return [sanitize_for_json(item, f"{path}[{i}]" if path else f"[{i}]", non_finite_paths) for i, item in enumerate(payload)]
-    elif isinstance(payload, (float, np.floating)):
-        val = float(payload)
-        if not math.isfinite(val):
-            if len(non_finite_paths) < 10:
-                non_finite_paths.append(f"{path}={val}")
-            return None
-        return val
-    elif isinstance(payload, (int, np.integer)):
-        return int(payload)
-    else:
-        return payload
-
+# -------------------------------------------------------
+# /spatial-fingerprint — main product endpoint
+# -------------------------------------------------------
 
 @app.post("/spatial-fingerprint")
 async def spatial_fingerprint(
@@ -233,11 +259,10 @@ async def spatial_fingerprint(
     max_events: int = 200,
 ):
     """
-    WAV-only. Returns normalized 'Spatial Fingerprint' events for main + optional reference.
-    Adds LUFS + CREST under track/features and reference/features.
+    WAV only. Returns normalized Spatial Fingerprint events for main + optional reference.
+    Adds LUFS + CREST + LOW_END under track/features and reference/features.
     """
     try:
-        # WAV-only enforcement
         def _require_wav(upload: UploadFile) -> str:
             filename = upload.filename or ""
             ext = os.path.splitext(filename)[1].lower()
@@ -271,7 +296,6 @@ async def spatial_fingerprint(
                 tmp_ref.write(await ref_file.read())
 
         try:
-            # --- duration without loading (memory-friendly logs) ---
             def _file_duration_sec(path: str) -> float:
                 inf = sf.info(path)
                 return float(inf.frames / inf.samplerate) if inf.samplerate else 0.0
@@ -280,14 +304,16 @@ async def spatial_fingerprint(
             main_trimmed = main_duration_sec > MAX_ANALYZE_SECONDS
             main_analyzed_sec = min(main_duration_sec, MAX_ANALYZE_SECONDS)
             print(f"[spatial-fingerprint] main: file_duration_sec={main_duration_sec:.2f}, capped_sec={MAX_ANALYZE_SECONDS}, trimmed={main_trimmed}")
+
             if ref_path:
                 ref_duration_sec = _file_duration_sec(ref_path)
                 ref_trimmed = ref_duration_sec > MAX_ANALYZE_SECONDS
                 ref_analyzed_sec = min(ref_duration_sec, MAX_ANALYZE_SECONDS)
                 print(f"[spatial-fingerprint] ref: file_duration_sec={ref_duration_sec:.2f}, capped_sec={MAX_ANALYZE_SECONDS}, trimmed={ref_trimmed}")
+
             print(f"[spatial-fingerprint] memory-friendly: sr={ANALYSIS_SR}, duration_cap_sec={MAX_ANALYZE_SECONDS}")
 
-            # --- compute fingerprint(s) ---
+            # Compute fingerprints
             main_fp = compute_spatial_fingerprint(
                 main_path,
                 filename=main_name,
@@ -302,7 +328,7 @@ async def spatial_fingerprint(
                     settings=settings,
                 )
 
-            # --- compute LUFS + CREST + LOW_END (capped load, no full file) ---
+            # Compute LUFS + CREST + LOW_END
             y_main_stereo, sr_main = librosa.load(
                 main_path,
                 sr=ANALYSIS_SR,
@@ -311,7 +337,11 @@ async def spatial_fingerprint(
                 dtype=np.float32,
             )
             y_main_stereo = np.asarray(y_main_stereo, dtype=np.float32)
-            y_main_mono = np.mean(y_main_stereo, axis=0) if y_main_stereo.ndim > 1 else y_main_stereo
+            y_main_mono = (
+                np.mean(y_main_stereo, axis=0)
+                if y_main_stereo.ndim > 1
+                else y_main_stereo
+            )
             main_lufs = compute_lufs(y_main_mono, sr_main)
             main_crest = compute_crest_factor_over_time(y_main_mono, sr_main)
             main_low_end = compute_low_end_over_time(y_main_stereo, sr_main)
@@ -328,12 +358,15 @@ async def spatial_fingerprint(
                     dtype=np.float32,
                 )
                 y_ref_stereo = np.asarray(y_ref_stereo, dtype=np.float32)
-                y_ref_mono = np.mean(y_ref_stereo, axis=0) if y_ref_stereo.ndim > 1 else y_ref_stereo
+                y_ref_mono = (
+                    np.mean(y_ref_stereo, axis=0)
+                    if y_ref_stereo.ndim > 1
+                    else y_ref_stereo
+                )
                 ref_lufs = compute_lufs(y_ref_mono, sr_ref)
                 ref_crest = compute_crest_factor_over_time(y_ref_mono, sr_ref)
                 ref_low_end = compute_low_end_over_time(y_ref_stereo, sr_ref)
 
-            # --- attach features inside "features" without breaking existing keys ---
             payload = {
                 "version": "spatial-fingerprint/v1",
                 "settings": settings,
@@ -358,17 +391,15 @@ async def spatial_fingerprint(
                     },
                 },
             }
-            
-            # Sanitize non-finite floats before JSON encoding
+
             non_finite_paths = []
             payload = sanitize_for_json(payload, non_finite_paths=non_finite_paths)
-            
-            # Debug: print first 10 non-finite paths encountered
+
             if non_finite_paths:
                 print(f"[spatial-fingerprint] Found {len(non_finite_paths)} non-finite value(s):")
-                for path in non_finite_paths[:10]:
-                    print(f"  {path}")
-            
+                for p in non_finite_paths[:10]:
+                    print(f"  {p}")
+
             return JSONResponse(content=jsonable_encoder(payload))
 
         finally:

@@ -34,6 +34,9 @@ function forceRemountCurrentViz() {
   }
 }
 
+// Global flag for Spatial overlay mode (Track + Reference at once)
+window.TrueNorthOverlayEnabled = false;
+
 (async function main() {
   try {
     // 1) Load viz modules
@@ -110,6 +113,7 @@ function forceRemountCurrentViz() {
     const trackRefBtns = ["btnTrack", "btnRef"];
     const trackBtn = document.getElementById("btnTrack");
     const refBtn = document.getElementById("btnRef");
+    const overlayBtn = document.getElementById("btnOverlay");
 
     // default mode
     window.TrueNorthVizMode = "track";
@@ -131,6 +135,30 @@ function forceRemountCurrentViz() {
 
       if (currentViz === "crest") forceRemountCurrentViz();
     });
+
+    // ---------------------------
+    // Overlay toggle (Spatial only)
+    // ---------------------------
+    function syncOverlayVisibility() {
+      if (!overlayBtn) return;
+      const show = currentViz === "spatial";
+      overlayBtn.style.display = show ? "inline-flex" : "none";
+      if (!show) {
+        window.TrueNorthOverlayEnabled = false;
+        overlayBtn.classList.remove("active");
+        overlayBtn.setAttribute("aria-pressed", "false");
+      }
+    }
+
+    if (overlayBtn) {
+      overlayBtn.addEventListener("click", () => {
+        if (currentViz !== "spatial") return;
+        window.TrueNorthOverlayEnabled = !window.TrueNorthOverlayEnabled;
+        overlayBtn.classList.toggle("active", window.TrueNorthOverlayEnabled);
+        overlayBtn.setAttribute("aria-pressed", window.TrueNorthOverlayEnabled ? "true" : "false");
+        forceRemountCurrentViz();
+      });
+    }
 
     // ---------------------------
     // + notes: appear after 30s, then expand/collapse mini notepad (Track | Reference, bottom-right under graph)
@@ -246,15 +274,36 @@ function forceRemountCurrentViz() {
       };
 
       const doc = docs[vizType] || docs.spatial;
+      const collapseByDefault = vizType === "spatial";
+
       tabDocsEl.innerHTML = `
-        <h3>${doc.title}</h3>
-        <ul>
-          ${doc.bullets.map(bullet => `<li>${bullet}</li>`).join('')}
-        </ul>
+        <div class="docs-header">
+          <h3>${doc.title}</h3>
+          <button type="button" class="docs-help-toggle" aria-label="Toggle help" aria-expanded="${collapseByDefault ? "false" : "true"}">?</button>
+        </div>
+        <div class="docs-body" ${collapseByDefault ? "hidden" : ""}>
+          <ul>
+            ${doc.bullets.map(bullet => `<li>${bullet}</li>`).join('')}
+          </ul>
+        </div>
         <div style="margin-top: 12px; line-height: 1.4;">
-          <a href="docs.html#${doc.anchor}" target="_blank" rel="noopener noreferrer" style="color: #008080; text-decoration: none; font-size: 12px; letter-spacing: -0.01em; transition: color 0.2s ease; display: inline-block;" onmouseover="this.style.color='#006666'" onmouseout="this.style.color='#008080'">See further documentation</a>
+          <a href="docs.html#${doc.anchor}" target="_blank" rel="noopener noreferrer" style="color: #2D8B7A; text-decoration: none; font-size: 12px; letter-spacing: -0.01em; transition: color 0.2s ease; display: inline-block;" onmouseover="this.style.color='#256F62'" onmouseout="this.style.color='#2D8B7A'">See further documentation</a>
         </div>
       `;
+
+      const toggle = tabDocsEl.querySelector(".docs-help-toggle");
+      const body = tabDocsEl.querySelector(".docs-body");
+      if (toggle && body) {
+        toggle.addEventListener("click", () => {
+          const hidden = body.hasAttribute("hidden");
+          if (hidden) {
+            body.removeAttribute("hidden");
+          } else {
+            body.setAttribute("hidden", "");
+          }
+          toggle.setAttribute("aria-expanded", hidden ? "true" : "false");
+        });
+      }
       
       // Realign Region Stats after docs update (if spatial is active)
       if (vizType === "spatial") {
@@ -332,6 +381,7 @@ function forceRemountCurrentViz() {
       window.TrueNorthViz.setViz("spatial");
       renderDocumentation("spatial");
       updateRegionStatsVisibility("spatial");
+      if (typeof syncOverlayVisibility === "function") syncOverlayVisibility();
     });
 
     document.getElementById("btnVizLoudness")?.addEventListener("click", () => {
@@ -340,6 +390,7 @@ function forceRemountCurrentViz() {
       window.TrueNorthViz.setViz("loudness");
       renderDocumentation("loudness");
       updateRegionStatsVisibility("loudness");
+      if (typeof syncOverlayVisibility === "function") syncOverlayVisibility();
     });
 
     document.getElementById("btnVizCrest")?.addEventListener("click", () => {
@@ -348,6 +399,7 @@ function forceRemountCurrentViz() {
       window.TrueNorthViz.setViz("crest");
       renderDocumentation("crest");
       updateRegionStatsVisibility("crest");
+      if (typeof syncOverlayVisibility === "function") syncOverlayVisibility();
     });
 
     document.getElementById("btnVizLowEnd")?.addEventListener("click", () => {
@@ -356,6 +408,7 @@ function forceRemountCurrentViz() {
       window.TrueNorthViz.setViz("lowend");
       renderDocumentation("lowend");
       updateRegionStatsVisibility("lowend");
+      if (typeof syncOverlayVisibility === "function") syncOverlayVisibility();
     });
 
     // Default viz button state
@@ -363,6 +416,7 @@ function forceRemountCurrentViz() {
     currentViz = "spatial";
     renderDocumentation("spatial");
     updateRegionStatsVisibility("spatial");
+    if (typeof syncOverlayVisibility === "function") syncOverlayVisibility();
 
     // ---------------------------
     // Delta Summary (Track vs Reference)
@@ -433,10 +487,25 @@ function forceRemountCurrentViz() {
       ];
 
       linesEl.innerHTML = rows
-        .map(
-          (r) =>
-            `<div class="delta-summary-line" data-viz="${r.viz}" data-btn-id="${r.btnId}" role="button" tabindex="0">${r.label}: ${r.value}</div>`
-        )
+        .map((r) => {
+          const raw = r.value;
+          let cls = "delta-value";
+          if (raw === na || raw == null) {
+            cls += " na";
+          } else {
+            const num = parseFloat(String(raw));
+            if (Number.isFinite(num) && num < 0) {
+              cls += " neg";
+            }
+          }
+          const display = raw == null ? na : raw;
+          return `
+            <div class="delta-summary-line" data-viz="${r.viz}" data-btn-id="${r.btnId}" role="button" tabindex="0">
+              <span class="delta-label">${r.label}</span>
+              <span class="${cls}">${display}</span>
+            </div>
+          `;
+        })
         .join("");
 
       linesEl.querySelectorAll(".delta-summary-line").forEach((el) => {

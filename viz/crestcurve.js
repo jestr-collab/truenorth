@@ -176,9 +176,9 @@
       .attr("x2", d => x(d))
       .attr("y1", 0)
       .attr("y2", -innerH)
-      .attr("stroke", "rgba(15,23,42,0.20)")
-      .attr("stroke-opacity", 0.35)
-      .attr("stroke-width", 1.1);
+      .attr("stroke", "rgba(255,255,255,0.10)")
+      .attr("stroke-opacity", 1)
+      .attr("stroke-width", 1);
     
     // Draw horizontal grid lines
     grid.append("g")
@@ -190,9 +190,9 @@
       .attr("x2", innerW)
       .attr("y1", d => y(d))
       .attr("y2", d => y(d))
-      .attr("stroke", "rgba(15,23,42,0.20)")
-      .attr("stroke-opacity", 0.35)
-      .attr("stroke-width", 1.1);
+      .attr("stroke", "rgba(255,255,255,0.10)")
+      .attr("stroke-opacity", 1)
+      .attr("stroke-width", 1);
 
     // axes groups
     const gx = g.append("g").attr("transform", `translate(0,${innerH})`);
