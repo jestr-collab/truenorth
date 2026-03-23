@@ -115,7 +115,8 @@
     if (__currentViz === "crest" && __data) {
       mountViz(__currentViz);
     }
-    // For spatial/loudness, they handle mode internally via button clicks
-    // The buttons are already updated above, so they'll work on next interaction
+
+    // Spatial / loudness / low-end listen and redraw (Tab key uses setMode instead of synthetic clicks)
+    window.dispatchEvent(new CustomEvent("tn:viz-mode", { detail: { mode } }));
   };
 })();

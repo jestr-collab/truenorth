@@ -112,7 +112,7 @@ class TrueNorthUploadHandler {
 
       this.onLoading(false);
       console.log("Calling onSuccess (data parsed successfully); redirect happens only inside onSuccess after data is stored)");
-      this.onSuccess(data);
+      await Promise.resolve(this.onSuccess(data));
       return data;
     } catch (err) {
       this.onLoading(false);

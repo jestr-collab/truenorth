@@ -14,8 +14,10 @@
     
     <style>
       :root{
-        --paper: #F5F0E8;
-        --paper2:#F0E8DC;
+        /* Light grey page (replaces cream) */
+        --paper: #F4F6F9;
+        --paper2: #E8ECF1;
+        --page-bg: #E4E8EE;
         --ink:   #111827;
         --muted: rgba(15,23,42,0.60);
         --line:  rgba(15,23,42,0.10);
@@ -31,11 +33,16 @@
       }
 
       html, body { height: 100%; }
+      html{
+        background: var(--page-bg);
+        overscroll-behavior-y: none;
+      }
       body{
         margin: 0;
         font-family: var(--ui);
-        background: radial-gradient(1200px 600px at 50% 0%, #ffffff 0%, var(--paper) 55%, var(--paper2) 100%);
+        background: radial-gradient(1200px 640px at 50% -10%, #ffffff 0%, var(--paper) 52%, var(--paper2) 100%);
         color: var(--ink);
+        min-height: 100%;
       }
 
       #wrap{
@@ -53,12 +60,34 @@
         margin-bottom: 12px;
       }
 
+      .topbar-left{
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+        flex: 1;
+      }
+
+      .viz-top-logo{
+        height: 36px;
+        width: auto;
+        display: block;
+        flex-shrink: 0;
+        object-fit: contain;
+      }
+
       #hint{
         color: var(--muted);
         font-size: 11px;
         font-family: var(--ui);
         text-transform: uppercase;
         letter-spacing: 0.08em;
+        min-width: 0;
+      }
+
+      @media (max-width: 640px){
+        .viz-top-logo{ height: 30px; }
+        #hint{ font-size: 10px; letter-spacing: 0.06em; }
       }
 
       #vizContainer{
@@ -122,7 +151,7 @@
 
       #graphTitleWrap{
         position: relative;
-        height: 22px;
+        min-height: 22px;
         margin: 10px 0 10px;
         display: flex;
         justify-content: center;
@@ -130,11 +159,10 @@
         width: 100%;
       }
       
-      /* Ensure title stays centered even with timeRow on left */
       #graphTitleWrap #title{
         flex: 1;
         text-align: center;
-        max-width: calc(100% - 280px); /* Leave space for timeRow (200px scrubber + 50px label + 30px gap) */
+        max-width: 100%;
         margin: 0 auto;
       }
       #title{
@@ -144,8 +172,10 @@
         text-overflow: ellipsis;
         font-family: var(--ui);
         font-weight: 600;
-        font-size: 13px;
-        color: rgba(0,0,0,0.75);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--mintDark);
         max-width: 100%;
       }
 
@@ -166,7 +196,7 @@
         flex-direction: column;
         align-items: flex-end;
         gap: 8px;
-        margin-top: 8px;
+        margin-top: 14px;
       }
       .btn-notes-toggle{
         font-family: var(--ui);
@@ -325,58 +355,41 @@
         fill: rgba(45,139,122,0.15);
       }
 
-      #timeRow.timeBottom{
-        width: 100%;
-        margin-top: 14px;
 
-        /* match your D3 margin convention */
-        padding-left: 56px;
-        padding-right: 20px;
-
-        display: flex;
-        align-items: center;
-        gap: 14px;
-      }
-      
-      /* Time scrubber at top left, next to title */
-      #timeRow.timeTop{
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: auto;
-        margin: 0;
-        padding: 0;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        z-index: 10;
-      }
-      
-      #timeScrub{
+      .transport-wrap{
         width: 100%;
-        accent-color: var(--glow);
+        max-width: 960px;
+        height: 44px;
+        display:flex;
+        align-items:center;
+        gap:10px;
+        padding: 0 4px;
+        margin-top: 8px;
+        border-top: 1px solid rgba(15,23,42,0.10);
+        box-sizing:border-box;
       }
-      
-      /* Shorter scrubber for top position */
-      #timeRow.timeTop #timeScrub{
-        width: 200px; /* Significantly shorter to fit next to title */
+      .transport-play{
+        width:32px;height:32px;border-radius:999px;border:none;
+        background:#2D8B7A;color:#F8FAFC;display:inline-flex;align-items:center;justify-content:center;
+        box-shadow:none;padding:0;transform:none !important;
       }
-      
-      #timeLabel{
-        font-family: var(--digits);
-        font-variant-numeric: tabular-nums;
-        min-width: 60px;
-        text-align: right;
-        color: rgba(15,23,42,0.72);
+      .transport-play:disabled{ background: rgba(148,163,184,0.55); color: rgba(248,250,252,0.85); cursor:not-allowed; }
+      .transport-mode-tag{
+        font-size:10px;
         font-weight: 600;
-        letter-spacing: 0.04em;
+        letter-spacing:0.10em;
+        color: var(--mintDark);
+        min-width:42px;
       }
-      
-      /* Compact label for top position */
-      #timeRow.timeTop #timeLabel{
-        min-width: 50px;
-        text-align: left;
-        font-size: 11px;
+      .transport-scrub{ flex:1; accent-color:#2D8B7A; }
+      .transport-time{
+        font-size:11px;
+        font-weight: 500;
+        letter-spacing:0.05em;
+        color: var(--mintDark);
+        font-variant-numeric: tabular-nums;
+        min-width:120px;
+        text-align:right;
       }
 
       #tooltip{
@@ -483,7 +496,7 @@
 
       #sidebarTabs button.active{
         background: #2D8B7A;
-        color: #F5F0E8;
+        color: #F8FAFC;
         border-color: #256F62;
         box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 14px 30px rgba(0,0,0,0.45);
       }
@@ -532,7 +545,7 @@
 
       #tabDocs .docs-help-toggle[aria-expanded="true"]{
         background:#2D8B7A;
-        color:#F5F0E8;
+        color:#F8FAFC;
         border-color:#256F62;
       }
 
@@ -658,7 +671,10 @@
   <body>
     <div id="wrap">
       <div id="topbar">
-        <div id="hint">Press <b>Tab</b> to switch Track/Reference</div>
+        <div class="topbar-left">
+          <img class="viz-top-logo" src="./logo2.png" alt="TrueNorth" width="120" height="36" />
+          <div id="hint">Press <b>Tab</b> to switch Track/Reference</div>
+        </div>
         <button id="btnNewSession" class="ghost" onclick="window.location.href='index.html'">
           Start a new session
         </button>
@@ -679,19 +695,24 @@
             <div class="row">
               <button id="btnTrack" class="active">Track</button>
               <button id="btnRef">Reference</button>
-              <button id="btnOverlay" type="button" aria-pressed="false" style="margin-left:auto;">Overlay</button>
             </div>
 
             <div id="vizContainer">
               <div id="graphTitleWrap">
-                <div id="timeRow" class="timeTop">
-                  <input id="timeScrub" type="range" min="0" max="100" value="100" />
-                  <div id="timeLabel">00:00</div>
-                </div>
                 <div id="title">Track: —</div>
               </div>
 
               <svg id="chart" width="960" height="540"></svg>
+
+              <div id="transportWrap" class="transport-wrap">
+                <button id="btnPlayPause" class="transport-play" aria-label="Play or pause" title="Run Analyze on the upload page to enable playback" disabled>
+                  <span id="transportPlayIcon">▶</span>
+                </button>
+                <div id="transportModeTag" class="transport-mode-tag">TRACK</div>
+                <input id="timeScrub" class="transport-scrub" type="range" min="0" max="100" value="0" />
+                <div id="transportTime" class="transport-time"><span id="timeLabel">00:00</span> / <span id="timeTotal">00:00</span></div>
+              </div>
+
               <div id="notesWrap" class="notes-under-graph notes-delayed" aria-hidden="true">
                 <button type="button" id="btnNotesToggle" class="btn-notes-toggle" aria-expanded="false">+ notes</button>
                 <div id="notesPanel" class="notes-panel" hidden>
@@ -743,6 +764,7 @@
     <script src="./apiConfig.js"></script>
     <!-- Load upload handler -->
     <script src="./uploadHandler.js"></script>
+    <script src="./tnPlaybackStore.js"></script>
     <!-- Load viz system (production loader) -->
     <script src="./vizLoader.js"></script>
     <!-- Prototype UI wiring (demo only) -->

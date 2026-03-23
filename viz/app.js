@@ -69,7 +69,8 @@
       const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
       // ---------- State ----------
-      let mode = "track"; // "track" | "ref"
+      // Match global Track/Reference when switching tabs (tnBridge does not remount on setViz).
+      let mode = window.TrueNorthVizMode === "reference" ? "ref" : "track";
       let timePct = 100;
 
       let trackEventsAll = [];
@@ -90,6 +91,12 @@
       const state = {
         onResize: null,
         onSvgClick: null,
+        onVizMode: null,
+        onPresenceHelpEnter: null,
+        onPresenceHelpMove: null,
+        onPresenceHelpLeave: null,
+        presenceLabelEl: null,
+        axisHelpEl: null,
         statsEl: null,
         legendEl: null,
         styleEl: null,
@@ -173,13 +180,93 @@
         .attr("text-anchor", "middle")
         .text("Stereo Field");
 
-      g.append("text")
+      const presenceLabel = g.append("text")
         .attr("class", "label")
         .attr("transform", "rotate(-90)")
         .attr("x", -innerH / 2)
         .attr("y", -44)
         .attr("text-anchor", "middle")
+        .attr("role", "button")
+        .attr("tabindex", 0)
+        .style("cursor", "help")
         .text("Presence");
+
+      let axisHelpEl = document.getElementById("tnAxisHelp");
+      if (!axisHelpEl) {
+        axisHelpEl = document.createElement("div");
+        axisHelpEl.id = "tnAxisHelp";
+        axisHelpEl.setAttribute("role", "tooltip");
+        axisHelpEl.style.position = "fixed";
+        axisHelpEl.style.pointerEvents = "none";
+        axisHelpEl.style.opacity = "0";
+        axisHelpEl.style.zIndex = "10000";
+        axisHelpEl.style.maxWidth = "340px";
+        axisHelpEl.style.padding = "10px 12px";
+        axisHelpEl.style.borderRadius = "12px";
+        axisHelpEl.style.border = "1px solid rgba(45,139,122,0.35)";
+        axisHelpEl.style.background = "rgba(6,10,18,0.86)";
+        axisHelpEl.style.color = "rgba(248,250,252,0.94)";
+        axisHelpEl.style.boxShadow = "0 14px 34px rgba(15,23,42,0.24)";
+        axisHelpEl.style.backdropFilter = "blur(7px)";
+        axisHelpEl.style.webkitBackdropFilter = "blur(7px)";
+        axisHelpEl.style.fontFamily = "var(--ui, 'IBM Plex Mono', monospace)";
+        axisHelpEl.style.fontSize = "12px";
+        axisHelpEl.style.lineHeight = "1.45";
+        document.body.appendChild(axisHelpEl);
+      }
+
+      const presenceHelpText = "Presence shows how forward or intense a plotted moment feels compared with the other important moments in the song.";
+      function placeAxisHelp(clientX, clientY) {
+        if (!axisHelpEl) return;
+        const pad = 12;
+        const rect = axisHelpEl.getBoundingClientRect();
+        let xx = clientX + pad;
+        let yy = clientY + pad;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        if (xx + rect.width + pad > vw) xx = clientX - rect.width - pad;
+        if (yy + rect.height + pad > vh) yy = clientY - rect.height - pad;
+        xx = Math.max(pad, Math.min(vw - rect.width - pad, xx));
+        yy = Math.max(pad, Math.min(vh - rect.height - pad, yy));
+        axisHelpEl.style.left = `${xx}px`;
+        axisHelpEl.style.top = `${yy}px`;
+      }
+      function showAxisHelp(clientX, clientY) {
+        if (!axisHelpEl) return;
+        axisHelpEl.textContent = presenceHelpText;
+        axisHelpEl.style.opacity = "1";
+        placeAxisHelp(clientX, clientY);
+      }
+      function hideAxisHelp() {
+        if (!axisHelpEl) return;
+        axisHelpEl.style.opacity = "0";
+      }
+
+      const presenceLabelEl = presenceLabel.node();
+      const onPresenceHelpEnter = (ev) => {
+        const x = Number.isFinite(ev?.clientX) ? ev.clientX : 36;
+        const y = Number.isFinite(ev?.clientY) ? ev.clientY : 120;
+        showAxisHelp(x, y);
+      };
+      const onPresenceHelpMove = (ev) => {
+        if (!axisHelpEl || axisHelpEl.style.opacity !== "1") return;
+        if (!Number.isFinite(ev?.clientX) || !Number.isFinite(ev?.clientY)) return;
+        placeAxisHelp(ev.clientX, ev.clientY);
+      };
+      const onPresenceHelpLeave = () => {
+        hideAxisHelp();
+      };
+      presenceLabelEl.addEventListener("mouseenter", onPresenceHelpEnter);
+      presenceLabelEl.addEventListener("mousemove", onPresenceHelpMove);
+      presenceLabelEl.addEventListener("mouseleave", onPresenceHelpLeave);
+      presenceLabelEl.addEventListener("focus", onPresenceHelpEnter);
+      presenceLabelEl.addEventListener("blur", onPresenceHelpLeave);
+
+      state.presenceLabelEl = presenceLabelEl;
+      state.onPresenceHelpEnter = onPresenceHelpEnter;
+      state.onPresenceHelpMove = onPresenceHelpMove;
+      state.onPresenceHelpLeave = onPresenceHelpLeave;
+      state.axisHelpEl = axisHelpEl;
 
       // defs + glow filter
       const defs = svg.append("defs");
@@ -662,8 +749,25 @@
         const enter = sel.enter().append("circle");
 
         pointAttrs(enter.merge(sel))
-          .attr("r", 2.4)
-          .attr("fill-opacity", opacity)
+          .attr("r", 2.8)
+          .attr("fill-opacity", d => {
+            const playing = !!window.TrueNorthTransport?.playing;
+            if (!playing) return opacity;
+            const tNow = Number(window.TrueNorthTransport?.currentTimeSec ?? NaN);
+            const t = Number(d?.t_s ?? NaN);
+            if (!Number.isFinite(tNow) || !Number.isFinite(t)) return opacity;
+            const near = Math.abs(t - tNow) <= 0.18;
+            return near ? Math.min(1, opacity + 0.15) : 0.30;
+          })
+          .attr("stroke", d => {
+            const playing = !!window.TrueNorthTransport?.playing;
+            const tNow = Number(window.TrueNorthTransport?.currentTimeSec ?? NaN);
+            const t = Number(d?.t_s ?? NaN);
+            if (playing && Number.isFinite(tNow) && Number.isFinite(t) && Math.abs(t - tNow) <= 0.18) {
+              return "rgba(255,255,255,0.95)";
+            }
+            return bandColor(dominantBand(d));
+          })
           .style("cursor", interactive ? "crosshair" : "default")
           .on("mousemove", function(event, d) {
             if (!interactive) return;
@@ -791,12 +895,6 @@
       }
 
       // ---------- wire controls ----------
-      // time row should be visible for spatial, positioned at top left next to title
-      const timeRow = document.getElementById(ctx.timeRowId);
-      if (timeRow) {
-        timeRow.style.display = "flex";
-        timeRow.className = "timeTop"; // Change class to position at top
-      }
 
       const timeScrubId = ctx?.timeScrubId || "timeScrub";
       const scrub = document.getElementById(timeScrubId);
@@ -808,10 +906,27 @@
         };
       }
 
-      const btnTrack = document.getElementById(ctx.btnTrackId);
-      const btnRef = document.getElementById(ctx.btnRefId);
-      if (btnTrack) btnTrack.onclick = () => { mode = "track"; redraw(); };
-      if (btnRef) btnRef.onclick = () => { mode = "ref"; redraw(); };
+      const onTransportTime = () => {
+        const dur = Number(window.TrueNorthTransport?.durationSec || 0);
+        const cur = Number(window.TrueNorthTransport?.currentTimeSec || 0);
+        if (dur > 0 && Number.isFinite(cur)) {
+          timePct = Math.max(0, Math.min(100, (cur / dur) * 100));
+          redraw();
+        }
+      };
+      window.addEventListener("tn:transport-time", onTransportTime);
+      state.onTransportTime = onTransportTime;
+
+      // Track/Ref clicks + Tab go through vizShell → TrueNorthViz.setMode → tn:viz-mode
+      const onVizMode = (ev) => {
+        const m = ev.detail?.mode;
+        if (m === "reference") mode = "ref";
+        else if (m === "track") mode = "track";
+        else return;
+        redraw();
+      };
+      window.addEventListener("tn:viz-mode", onVizMode);
+      state.onVizMode = onVizMode;
 
       // mount region stats UI
       ensureRegionStatsPanel();
@@ -829,6 +944,27 @@
       if (state?.onResize) {
         window.removeEventListener("resize", state.onResize);
       }
+      if (state?.onTransportTime) {
+        window.removeEventListener("tn:transport-time", state.onTransportTime);
+      }
+      if (state?.onVizMode) {
+        window.removeEventListener("tn:viz-mode", state.onVizMode);
+      }
+      if (state?.presenceLabelEl) {
+        if (state.onPresenceHelpEnter) state.presenceLabelEl.removeEventListener("mouseenter", state.onPresenceHelpEnter);
+        if (state.onPresenceHelpMove) state.presenceLabelEl.removeEventListener("mousemove", state.onPresenceHelpMove);
+        if (state.onPresenceHelpLeave) state.presenceLabelEl.removeEventListener("mouseleave", state.onPresenceHelpLeave);
+        if (state.onPresenceHelpEnter) state.presenceLabelEl.removeEventListener("focus", state.onPresenceHelpEnter);
+        if (state.onPresenceHelpLeave) state.presenceLabelEl.removeEventListener("blur", state.onPresenceHelpLeave);
+      }
+      if (state?.axisHelpEl) {
+        state.axisHelpEl.style.opacity = "0";
+      }
+
+      const _btnT = document.getElementById("btnTrack");
+      const _btnR = document.getElementById("btnRef");
+      if (_btnT) _btnT.onclick = null;
+      if (_btnR) _btnR.onclick = null;
 
       if (state?.statsEl?.parentNode) {
         state.statsEl.parentNode.removeChild(state.statsEl);

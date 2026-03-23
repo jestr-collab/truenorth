@@ -86,7 +86,7 @@
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
       // ---------- state ----------
-      let mode = "track"; // "track" | "ref"
+      let mode = window.TrueNorthVizMode === "reference" ? "ref" : "track";
       let trackData = { points: [], bands_hz: null, labels: [] };
       let refData = { points: [], bands_hz: null, labels: [] };
       
@@ -358,6 +358,16 @@
 
       const hoverDot = g.append("circle").attr("r", 4.5).attr("opacity", 0);
 
+      const playhead = g
+        .append("line")
+        .attr("stroke", "rgba(45,139,122,0.55)")
+        .attr("stroke-width", 1)
+        .attr("x1", 0)
+        .attr("x2", 0)
+        .attr("y1", 0)
+        .attr("y2", innerH)
+        .attr("opacity", 0);
+
       const overlay = g
         .append("rect")
         .attr("width", innerW)
@@ -482,6 +492,14 @@
           .attr("stroke", "rgba(15,23,42,0.20)")
           .attr("stroke-opacity", 0.35)
           .attr("stroke-width", 1.1);
+
+        const tPlay = Number(window.TrueNorthTransport?.currentTimeSec ?? NaN);
+        if (Number.isFinite(tPlay)) {
+          const [xMin2, xMax2] = x.domain();
+          playhead.attr("x1", x(tPlay)).attr("x2", x(tPlay)).attr("opacity", tPlay >= xMin2 && tPlay <= xMax2 ? 1 : 0);
+        } else {
+          playhead.attr("opacity", 0);
+        }
 
         // Update axes (domains already set, just redraw)
         gx.call(d3.axisBottom(x).ticks(7).tickFormat(d => formatTimeMMSS(d)));
@@ -642,7 +660,12 @@
 
           showTip(event, d, mode === "ref" ? "Reference" : "Track");
         })
-        .on("mouseleave", hideTip);
+        .on("mouseleave", hideTip)
+        .on("click", function (event) {
+          const [mx] = d3.pointer(event, this);
+          const t = x.invert(mx);
+          window.dispatchEvent(new CustomEvent("tn:transport-seek-request", { detail: { seconds: t } }));
+        });
 
       // ---------- toggle buttons UI ----------
       // Renders band toggle buttons into the sidebar stats panel container
@@ -829,55 +852,26 @@
 
       // ---------- track toggle handling ----------
       function updateSeries() {
-        // Get current mode from global state or button state
-        const trackBtn = document.getElementById(ctx.btnTrackId);
-        const refBtn = document.getElementById(ctx.btnRefId);
-        const trackIsActive = trackBtn?.classList.contains("active") || window.TrueNorthVizMode === "track";
-        mode = trackIsActive ? "track" : "ref";
+        // Single source of truth (buttons can lag one frame behind setMode under rapid switching)
+        mode = window.TrueNorthVizMode === "reference" ? "ref" : "track";
 
         const dataObj = mode === "ref" ? refData : trackData;
         render.call(this, dataObj);
         setTitle();
       }
 
-      // Wire button clicks
-      const btnTrack = document.getElementById(ctx.btnTrackId);
-      const btnRef = document.getElementById(ctx.btnRefId);
-
-      if (btnTrack)
-        btnTrack.onclick = () => {
-          mode = "track";
-          updateSeries.call(this);
-        };
-      if (btnRef)
-        btnRef.onclick = () => {
-          mode = "ref";
-          updateSeries.call(this);
-        };
-
       // Store cleanup refs
-      this.__tn_lowend_state = {
-        interval: null,
-      };
+      this.__tn_lowend_state = {};
       this.__tn_lowend_state.styleEl = this.__tn_lowend_styleEl;
       this.__tn_lowend_state.legendEl = lowEndLegend;
       this.__tn_lowend_state.onLegendResize = onLegendResize;
 
-      // Listen for Tab key changes (via window.TrueNorthVizMode)
-      // Check mode periodically or on focus (simple approach)
-      let lastMode = window.TrueNorthVizMode || "track";
-      const modeCheckInterval = setInterval(() => {
-        const currentMode = window.TrueNorthVizMode || "track";
-        if (currentMode !== lastMode) {
-          lastMode = currentMode;
-          updateSeries.call(this);
-        }
-      }, 100);
-      this.__tn_lowend_state.interval = modeCheckInterval;
+      const onVizMode = () => {
+        updateSeries.call(this);
+      };
+      window.addEventListener("tn:viz-mode", onVizMode);
+      this.__tn_lowend_state.onVizMode = onVizMode;
 
-      // Hide time scrubber (using pinch-to-zoom instead)
-      const timeRow = document.getElementById(ctx.timeRowId);
-      if (timeRow) timeRow.style.display = "none";
 
       // Set up D3 zoom behavior (supports trackpad pinch gestures)
       // Track current mouse position and hover dot time for focal point zooming
@@ -973,6 +967,10 @@
       // Store zoom reference for cleanup
       this.__tn_lowend_state.zoom = zoom;
 
+      const onTransportTime = () => updateSeries.call(this);
+      window.addEventListener("tn:transport-time", onTransportTime);
+      this.__tn_lowend_state.onTransportTime = onTransportTime;
+
       // Initial render
       setTitle();
       updateSeries.call(this);
@@ -982,9 +980,15 @@
       const state = this.__tn_lowend_state;
       if (state) {
         if (state.interval) clearInterval(state.interval);
+        if (state.onVizMode) window.removeEventListener("tn:viz-mode", state.onVizMode);
+        if (state.onTransportTime) window.removeEventListener("tn:transport-time", state.onTransportTime);
         if (state.styleEl?.parentNode) state.styleEl.parentNode.removeChild(state.styleEl);
         if (state.onLegendResize) window.removeEventListener("resize", state.onLegendResize);
       }
+      const _btnT = document.getElementById("btnTrack");
+      const _btnR = document.getElementById("btnRef");
+      if (_btnT) _btnT.onclick = null;
+      if (_btnR) _btnR.onclick = null;
 
       // Remove toggle buttons
       const toggles = document.getElementById("tnLowEndToggles");

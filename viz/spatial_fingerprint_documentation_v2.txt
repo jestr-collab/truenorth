@@ -1,0 +1,82 @@
+
+Understanding the Spatial Fingerprint
+
+The Spatial Fingerprint is built to show where a mix makes its strongest spatial statements. 
+Rather than plotting every sound that exists in a track, it highlights the moments where the mix 
+clearly asserts itself — the points where energy, placement, and clarity combine to create a 
+noticeable spatial impression.
+
+Each dot represents a perceptually important moment. These are typically transient‑anchored events 
+such as vocal syllables, drum hits, guitar attacks, piano notes, or any element that naturally 
+pulls listener focus. By concentrating on these moments, the fingerprint provides a meaningful 
+snapshot of the mix’s spatial decisions over time.
+
+Why you may hear sounds that do not appear on the graph
+
+Music often contains continuous textures: reverb tails, ambient pads, stereo wash, room tone, 
+chorus effects, and other sustained layers. These sounds shape the emotional atmosphere of a 
+recording, but because they evolve gradually and lack clear transient definition, they do not 
+always register as dominant analysis events.
+
+If every continuous sound were plotted, the visualization would quickly become a dense cloud 
+of points with no clear structure. The Spatial Fingerprint intentionally avoids this by focusing 
+on perceptual salience rather than constant signal activity.
+
+A helpful way to think about it:
+
+A dot does not mean “there is sound here.”  
+A dot means “the mix made a spatial decision here.”
+
+Understanding glow (spatial bloom)
+
+Some points appear with a soft glow. This indicates that sound energy continues to expand after 
+the initial impact. In practical terms, glowing points often correspond to reverb tails, room 
+decay, stereo delay reflections, or sustained harmonic bloom.
+
+Glow does not represent loudness or width by itself. Instead, it reflects how long sound energy 
+persists after the transient. Dry, tight sounds typically produce solid dots, while more 
+atmospheric or spacious moments produce glowing ones.
+
+Using Region Stats to analyze specific sections
+
+The Region Stats panel allows you to click and drag across the visualization to study a focused 
+area of the mix. This provides a deeper layer of insight by summarizing the spatial behavior of 
+selected moments.
+
+Artifact Count  
+The number of perceptually dominant events inside the selected region. Higher counts suggest 
+greater rhythmic clarity or spatial activity within that area.
+
+Relative Density  
+The percentage of total events that fall inside the selection. This helps you understand how 
+important that region is compared to the overall mix timeline.
+
+Frequency Mix  
+The balance of low, mid, and high frequency dominance among the selected events. A low‑heavy 
+region may indicate bass‑driven spatial focus, while mid‑heavy regions often relate to vocals 
+or guitars.
+
+Mean Presence  
+The average perceptual intensity of events in the region. Higher values generally indicate 
+moments where elements feel more forward or assertive in the mix.
+
+Stereo Bias  
+The average left‑to‑right positioning tendency within the selected area. Values near zero 
+suggest centered balance, while more extreme values reveal directional weighting.
+
+Mean Wetness  
+The average spatial decay characteristic of the region. Higher wetness typically reflects 
+more ambience, longer reverbs, or sustained spatial bloom.
+
+Interpreting sparse versus dense fingerprints
+
+A sparse fingerprint does not mean a mix lacks detail. It often indicates arrangements that rely 
+on atmosphere, sustain, or gradual dynamic build. Dense clusters often reflect productions with 
+strong transient definition and deliberate placement choices.
+
+Getting the most value from the Spatial Fingerprint
+
+Use the fingerprint alongside loudness, crest factor, and low‑end analysis to build a complete 
+picture of how your mix behaves. The goal is not to replace listening, but to support it. Over 
+time, you will begin to recognize visual patterns that correspond to mixes that feel punchy, 
+wide, intimate, or atmospheric.

@@ -1,0 +1,33 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE / editor
+.cursor/
+.vscode/
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.venv/
+venv/
+env/
+
+# Env / secrets
+.env
+.env.*
+
+# Logs
+*.log
+
+# Local audio / DAW (not needed for static site)
+*.wav
+*.wav.band/
+*.band/
+
+# Unused heavy demo (homepage uses demo.mp4)
+viz/record.mp4

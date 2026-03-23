@@ -34,10 +34,17 @@ function forceRemountCurrentViz() {
   }
 }
 
-// Global flag for Spatial overlay mode (Track + Reference at once)
-window.TrueNorthOverlayEnabled = false;
+window.TrueNorthTransport = window.TrueNorthTransport || {
+  currentTimeSec: 0,
+  durationSec: 0,
+  playing: false,
+};
 
 (async function main() {
+  if (window.__TN_VIZ_SHELL_INITIALIZED__) {
+    return;
+  }
+  window.__TN_VIZ_SHELL_INITIALIZED__ = true;
   try {
     // 1) Load viz modules
     await loadScriptOnce("./app.js");
@@ -113,55 +120,289 @@ window.TrueNorthOverlayEnabled = false;
     const trackRefBtns = ["btnTrack", "btnRef"];
     const trackBtn = document.getElementById("btnTrack");
     const refBtn = document.getElementById("btnRef");
-    const overlayBtn = document.getElementById("btnOverlay");
 
     // default mode
     window.TrueNorthVizMode = "track";
     setActiveButton("btnTrack", trackRefBtns);
 
-    // IMPORTANT: Do NOT force-remount here for spatial/loudness.
-    // Those vizzes manage their own internal mode + redraw on click.
-    // Only crest (mount-only) needs forceRemount.
-    trackBtn?.addEventListener("click", () => {
-      setActiveButton("btnTrack", trackRefBtns);
-      window.TrueNorthVizMode = "track";
-
-      if (currentViz === "crest") forceRemountCurrentViz();
-    });
-
-    refBtn?.addEventListener("click", () => {
-      setActiveButton("btnRef", trackRefBtns);
-      window.TrueNorthVizMode = "reference";
-
-      if (currentViz === "crest") forceRemountCurrentViz();
-    });
+    // Track/Ref listeners wired after switchTrackRefMode() is defined (see transport section below).
 
     // ---------------------------
-    // Overlay toggle (Spatial only)
+    // Bottom transport + browser-only audio playback
     // ---------------------------
-    function syncOverlayVisibility() {
-      if (!overlayBtn) return;
-      const show = currentViz === "spatial";
-      overlayBtn.style.display = show ? "inline-flex" : "none";
-      if (!show) {
-        window.TrueNorthOverlayEnabled = false;
-        overlayBtn.classList.remove("active");
-        overlayBtn.setAttribute("aria-pressed", "false");
+    const playBtn = document.getElementById("btnPlayPause");
+    const playIcon = document.getElementById("transportPlayIcon");
+    const modeTag = document.getElementById("transportModeTag");
+    const scrubEl = document.getElementById("timeScrub");
+    const timeNowEl = document.getElementById("timeLabel");
+    const timeTotalEl = document.getElementById("timeTotal");
+    const transport = {
+      trackUrl: null,
+      refUrl: null,
+      trackAudio: null,
+      refAudio: null,
+      activeAudio: null,
+      /** Bumped on every track/ref switch so stale play() callbacks cannot resume the wrong file */
+      playbackEpoch: 0,
+    };
+
+    function formatMMSS(seconds) {
+      if (!Number.isFinite(seconds)) return "00:00";
+      const s = Math.max(0, Math.floor(seconds));
+      const mm = String(Math.floor(s / 60)).padStart(2, "0");
+      const ss = String(s % 60).padStart(2, "0");
+      return `${mm}:${ss}`;
+    }
+
+    function updateTransportUI() {
+      const current = Number(window.TrueNorthTransport.currentTimeSec || 0);
+      const duration = Number(window.TrueNorthTransport.durationSec || 0);
+      if (timeNowEl) timeNowEl.textContent = formatMMSS(current);
+      if (timeTotalEl) timeTotalEl.textContent = formatMMSS(duration);
+      if (scrubEl) {
+        const pct = duration > 0 ? (current / duration) * 100 : 0;
+        scrubEl.value = String(Math.max(0, Math.min(100, pct)));
+      }
+      if (playIcon) playIcon.textContent = window.TrueNorthTransport.playing ? "⏸" : "▶";
+      if (modeTag) modeTag.textContent = window.TrueNorthVizMode === "reference" ? "REF" : "TRACK";
+      window.dispatchEvent(new CustomEvent("tn:transport-time", { detail: { ...window.TrueNorthTransport } }));
+    }
+
+    function pauseActiveAudio() {
+      transport.trackAudio?.pause();
+      transport.refAudio?.pause();
+      window.TrueNorthTransport.playing = false;
+      updateTransportUI();
+    }
+
+    function setTransportDisabled(disabled, tooltipText) {
+      if (!playBtn) return;
+      playBtn.disabled = disabled;
+      playBtn.title = tooltipText || "";
+    }
+
+    function syncActiveAudioFromMode() {
+      transport.activeAudio = window.TrueNorthVizMode === "reference" ? transport.refAudio : transport.trackAudio;
+      const hasAudio = !!transport.activeAudio;
+      if (!hasAudio) {
+        window.TrueNorthTransport.playing = false;
+      }
+      if (!hasAudio) {
+        setTransportDisabled(true, "Run Analyze on the upload page to enable playback");
+      } else {
+        setTransportDisabled(false, "");
+      }
+      updateTransportUI();
+    }
+
+    function switchTrackRefMode(mode) {
+      if (mode !== "track" && mode !== "reference") return;
+      const wasPlaying = !!window.TrueNorthTransport.playing;
+      const sameTime = Number(window.TrueNorthTransport.currentTimeSec || 0);
+
+      transport.playbackEpoch += 1;
+      const epoch = transport.playbackEpoch;
+
+      pauseActiveAudio();
+
+      if (window.TrueNorthViz && typeof window.TrueNorthViz.setMode === "function") {
+        window.TrueNorthViz.setMode(mode);
+      } else {
+        window.TrueNorthVizMode = mode;
+        setActiveButton(mode === "track" ? "btnTrack" : "btnRef", trackRefBtns);
+        if (currentViz === "crest") forceRemountCurrentViz();
+      }
+      syncActiveAudioFromMode();
+      if (transport.activeAudio) {
+        transport.activeAudio.currentTime = sameTime;
+      }
+      if (wasPlaying && transport.activeAudio && !playBtn?.disabled) {
+        const el = transport.activeAudio;
+        el.play().then(() => {
+          if (epoch !== transport.playbackEpoch) return;
+          if (transport.activeAudio !== el) return;
+          window.TrueNorthTransport.playing = true;
+          updateTransportUI();
+        }).catch(() => {});
       }
     }
 
-    if (overlayBtn) {
-      overlayBtn.addEventListener("click", () => {
-        if (currentViz !== "spatial") return;
-        window.TrueNorthOverlayEnabled = !window.TrueNorthOverlayEnabled;
-        overlayBtn.classList.toggle("active", window.TrueNorthOverlayEnabled);
-        overlayBtn.setAttribute("aria-pressed", window.TrueNorthOverlayEnabled ? "true" : "false");
-        forceRemountCurrentViz();
+    window.__TN_switchTrackRefMode = switchTrackRefMode;
+
+    if (!window.__TN_TAB_HANDLER_INSTALLED__) {
+      window.__TN_TAB_HANDLER_INSTALLED__ = true;
+      function tnTabTargetIsTextLike(el) {
+        if (!el || el.nodeType !== 1) return false;
+        if (el.isContentEditable) return true;
+        if (typeof el.closest === "function" && el.closest("[contenteditable='true']")) return true;
+        const tag = (el.tagName || "").toLowerCase();
+        if (tag === "textarea") return true;
+        if (tag === "select") return true;
+        if (tag === "input") {
+          const type = (el.type || "").toLowerCase();
+          if (
+            type === "button" ||
+            type === "submit" ||
+            type === "reset" ||
+            type === "checkbox" ||
+            type === "radio" ||
+            type === "range" ||
+            type === "file" ||
+            type === "color" ||
+            type === "hidden"
+          ) {
+            return false;
+          }
+          return true;
+        }
+        return false;
+      }
+      window.addEventListener(
+        "keydown",
+        (e) => {
+          if (e.key !== "Tab" && e.code !== "Tab") return;
+          if (e.repeat) return;
+          if (tnTabTargetIsTextLike(e.target)) return;
+          if (typeof window.__TN_switchTrackRefMode !== "function") return;
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          e.stopPropagation();
+          const showingTrack = window.TrueNorthVizMode !== "reference";
+          window.__TN_switchTrackRefMode(showingTrack ? "reference" : "track");
+        },
+        { capture: true, passive: false }
+      );
+    }
+
+    trackBtn?.addEventListener("click", () => switchTrackRefMode("track"));
+    refBtn?.addEventListener("click", () => switchTrackRefMode("reference"));
+
+    function bindAudioEvents(audioEl) {
+      if (!audioEl) return;
+      audioEl.addEventListener("loadedmetadata", () => {
+        if (audioEl === transport.activeAudio) {
+          window.TrueNorthTransport.durationSec = Number(audioEl.duration || 0);
+          updateTransportUI();
+        }
+      });
+      audioEl.addEventListener("timeupdate", () => {
+        if (audioEl !== transport.activeAudio) return;
+        window.TrueNorthTransport.currentTimeSec = Number(audioEl.currentTime || 0);
+        window.TrueNorthTransport.durationSec = Number(audioEl.duration || window.TrueNorthTransport.durationSec || 0);
+        updateTransportUI();
+      });
+      audioEl.addEventListener("ended", () => {
+        if (audioEl !== transport.activeAudio) return;
+        window.TrueNorthTransport.playing = false;
+        updateTransportUI();
       });
     }
 
+    function attachPlaybackFromStoredBlobs(trackBlob, refBlob) {
+      if (!trackBlob || !refBlob) return;
+      transport.trackAudio?.pause();
+      transport.refAudio?.pause();
+      window.TrueNorthTransport.playing = false;
+      if (transport.trackUrl) URL.revokeObjectURL(transport.trackUrl);
+      if (transport.refUrl) URL.revokeObjectURL(transport.refUrl);
+      transport.trackUrl = URL.createObjectURL(trackBlob);
+      transport.refUrl = URL.createObjectURL(refBlob);
+      transport.trackAudio = new Audio(transport.trackUrl);
+      transport.refAudio = new Audio(transport.refUrl);
+      transport.trackAudio.preload = "auto";
+      transport.refAudio.preload = "auto";
+      bindAudioEvents(transport.trackAudio);
+      bindAudioEvents(transport.refAudio);
+      syncActiveAudioFromMode();
+    }
+
+    (async function hydratePlaybackFromUploadPage() {
+      try {
+        const store = window.TrueNorthPlaybackStore;
+        if (!store?.load) return;
+        const { track, reference } = await store.load();
+        if (track && reference) {
+          if (transport.trackAudio && transport.refAudio) return;
+          attachPlaybackFromStoredBlobs(track, reference);
+        }
+      } catch (e) {
+        console.warn("Could not load stored playback audio:", e);
+      }
+    })();
+
+    if (playBtn) {
+      playBtn.addEventListener("click", async () => {
+        if (playBtn.disabled || !transport.activeAudio) return;
+        if (window.TrueNorthTransport.playing) {
+          pauseActiveAudio();
+          return;
+        }
+        transport.playbackEpoch += 1;
+        const epoch = transport.playbackEpoch;
+        const el = transport.activeAudio;
+        try {
+          await el.play();
+          if (epoch !== transport.playbackEpoch || transport.activeAudio !== el) {
+            el.pause();
+            return;
+          }
+          window.TrueNorthTransport.playing = true;
+          updateTransportUI();
+        } catch (_) {
+          setTransportDisabled(true, "Run Analyze on the upload page to enable playback");
+        }
+      });
+    }
+
+    if (scrubEl) {
+      scrubEl.addEventListener("input", () => {
+        const duration = Number(window.TrueNorthTransport.durationSec || 0);
+        const pct = Number(scrubEl.value || 0) / 100;
+        const nextSec = duration > 0 ? pct * duration : 0;
+        window.TrueNorthTransport.currentTimeSec = nextSec;
+        if (transport.activeAudio && Number.isFinite(nextSec)) {
+          transport.activeAudio.currentTime = nextSec;
+        }
+        updateTransportUI();
+      });
+    }
+
+    window.addEventListener("tn:transport-seek-request", (ev) => {
+      const sec = Number(ev?.detail?.seconds);
+      if (!Number.isFinite(sec)) return;
+      window.TrueNorthTransport.currentTimeSec = Math.max(0, sec);
+      if (transport.activeAudio) {
+        transport.activeAudio.currentTime = window.TrueNorthTransport.currentTimeSec;
+      }
+      updateTransportUI();
+    });
+
+    document.addEventListener("keydown", async (e) => {
+      if (e.code !== "Space") return;
+      const tag = (e.target?.tagName || "").toLowerCase();
+      if (tag === "input" || tag === "textarea") return;
+      e.preventDefault();
+      if (playBtn?.disabled || !transport.activeAudio) return;
+      if (window.TrueNorthTransport.playing) {
+        pauseActiveAudio();
+      } else {
+        transport.playbackEpoch += 1;
+        const epoch = transport.playbackEpoch;
+        const el = transport.activeAudio;
+        try {
+          await el.play();
+          if (epoch !== transport.playbackEpoch || transport.activeAudio !== el) {
+            el.pause();
+            return;
+          }
+          window.TrueNorthTransport.playing = true;
+          updateTransportUI();
+        } catch (_) {}
+      }
+    });
+
     // ---------------------------
-    // + notes: appear after 30s, then expand/collapse mini notepad (Track | Reference, bottom-right under graph)
+    // + notes: show immediately, then expand/collapse mini notepad (Track | Reference, bottom-right under graph)
     // ---------------------------
     const notesWrap = document.getElementById("notesWrap");
     const btnNotesToggle = document.getElementById("btnNotesToggle");
@@ -170,7 +411,6 @@ window.TrueNorthOverlayEnabled = false;
     const notesRef = document.getElementById("notesRef");
     const NOTES_TRACK_KEY = "tn:notesTrack";
     const NOTES_REF_KEY = "tn:notesRef";
-    const NOTES_DELAY_MS = 30000; // 30 seconds before notes UI appears
     if (btnNotesToggle && notesPanel && notesTrack && notesRef) {
       try {
         const savedTrack = localStorage.getItem(NOTES_TRACK_KEY);
@@ -192,38 +432,9 @@ window.TrueNorthOverlayEnabled = false;
         try { localStorage.setItem(NOTES_REF_KEY, notesRef.value); } catch (_) {}
       });
       if (notesWrap) {
-        setTimeout(() => {
-          notesWrap.classList.remove("notes-delayed");
-          notesWrap.setAttribute("aria-hidden", "false");
-        }, NOTES_DELAY_MS);
+        notesWrap.classList.remove("notes-delayed");
+        notesWrap.setAttribute("aria-hidden", "false");
       }
-    }
-
-    // ---------------------------
-    // Tab key toggles Track/Ref by CLICKING buttons
-    // ---------------------------
-    if (!window.__TN_TAB_HANDLER_INSTALLED__) {
-      window.__TN_TAB_HANDLER_INSTALLED__ = true;
-
-      document.addEventListener(
-        "keydown",
-        (e) => {
-          if (e.key !== "Tab") return;
-
-          e.preventDefault();
-          e.stopImmediatePropagation();
-          if (e.repeat) return;
-
-          const trackIsActive = document.getElementById("btnTrack")?.classList.contains("active");
-
-          if (trackIsActive) {
-            refBtn?.click();
-          } else {
-            trackBtn?.click();
-          }
-        },
-        true // capture phase
-      );
     }
 
     // ---------------------------
@@ -381,7 +592,6 @@ window.TrueNorthOverlayEnabled = false;
       window.TrueNorthViz.setViz("spatial");
       renderDocumentation("spatial");
       updateRegionStatsVisibility("spatial");
-      if (typeof syncOverlayVisibility === "function") syncOverlayVisibility();
     });
 
     document.getElementById("btnVizLoudness")?.addEventListener("click", () => {
@@ -390,7 +600,6 @@ window.TrueNorthOverlayEnabled = false;
       window.TrueNorthViz.setViz("loudness");
       renderDocumentation("loudness");
       updateRegionStatsVisibility("loudness");
-      if (typeof syncOverlayVisibility === "function") syncOverlayVisibility();
     });
 
     document.getElementById("btnVizCrest")?.addEventListener("click", () => {
@@ -399,7 +608,6 @@ window.TrueNorthOverlayEnabled = false;
       window.TrueNorthViz.setViz("crest");
       renderDocumentation("crest");
       updateRegionStatsVisibility("crest");
-      if (typeof syncOverlayVisibility === "function") syncOverlayVisibility();
     });
 
     document.getElementById("btnVizLowEnd")?.addEventListener("click", () => {
@@ -408,7 +616,6 @@ window.TrueNorthOverlayEnabled = false;
       window.TrueNorthViz.setViz("lowend");
       renderDocumentation("lowend");
       updateRegionStatsVisibility("lowend");
-      if (typeof syncOverlayVisibility === "function") syncOverlayVisibility();
     });
 
     // Default viz button state
@@ -416,7 +623,6 @@ window.TrueNorthOverlayEnabled = false;
     currentViz = "spatial";
     renderDocumentation("spatial");
     updateRegionStatsVisibility("spatial");
-    if (typeof syncOverlayVisibility === "function") syncOverlayVisibility();
 
     // ---------------------------
     // Delta Summary (Track vs Reference)
@@ -523,61 +729,12 @@ window.TrueNorthOverlayEnabled = false;
     }
     renderDeltaSummary(window.TrueNorthViz.getData());
 
-    // Ensure the time scrubber and viz start at 0% (00:00) on first load
-    const initialScrub = document.getElementById("timeScrub");
-    if (initialScrub) {
-      initialScrub.value = "0";
-      // Trigger the same logic spatial uses on manual scrub
-      initialScrub.dispatchEvent(new Event("input", { bubbles: true }));
+    // Transport starts at 00:00; playback enables when IndexedDB has blobs from upload page
+    if (scrubEl) {
+      scrubEl.value = "0";
+      scrubEl.dispatchEvent(new Event("input", { bubbles: true }));
     }
-
-    // ---------------------------
-    // One-time auto-scrub of time bar on first load
-    // ---------------------------
-    let autoScrubStarted = false;
-
-    function startAutoScrubOnce() {
-      if (autoScrubStarted) return;
-      autoScrubStarted = true;
-
-      const scrub = document.getElementById("timeScrub");
-      if (!scrub) return;
-
-      // If user physically interacts, cancel the animation
-      let userInteracted = false;
-      const cancelEvents = ["mousedown", "touchstart", "keydown"];
-      const cancelHandler = () => {
-        userInteracted = true;
-        cancelEvents.forEach(evt =>
-          scrub.removeEventListener(evt, cancelHandler)
-        );
-      };
-      cancelEvents.forEach(evt =>
-        scrub.addEventListener(evt, cancelHandler, { once: true })
-      );
-
-      // Animate from 0 -> 100 over 3 seconds
-      const durationMs = 3000;
-      const startTime = performance.now();
-
-      // Start at 0 so we see the full sweep
-      scrub.value = "0";
-      scrub.dispatchEvent(new Event("input", { bubbles: true }));
-
-      function step(now) {
-        if (userInteracted) return;
-        const t = Math.min(1, (now - startTime) / durationMs);
-        const value = 0 + (100 - 0) * t;
-        scrub.value = String(value);
-        scrub.dispatchEvent(new Event("input", { bubbles: true }));
-
-        if (t < 1 && !userInteracted) {
-          requestAnimationFrame(step);
-        }
-      }
-
-      requestAnimationFrame(step);
-    }
+    syncActiveAudioFromMode();
     
     // Align entire sidebar with graph on initial load and window resize
     window.addEventListener("resize", () => {
@@ -592,8 +749,6 @@ window.TrueNorthOverlayEnabled = false;
     // Align when chart is rendered (after data loads)
     setTimeout(() => {
       alignSidebarWithGraph();
-      // Start auto-scrub once, after layout & viz are ready
-      startAutoScrubOnce();
     }, 500);
 
     // ---------------------------
@@ -619,7 +774,15 @@ window.TrueNorthOverlayEnabled = false;
             btnUpload.textContent = loading ? "Analyzing..." : "Analyze";
           }
         },
-        onSuccess: (data) => {
+        onSuccess: async (data) => {
+          const pf = uploadHandler._playbackFilesToStore;
+          if (pf?.track && pf?.ref && window.TrueNorthPlaybackStore?.save) {
+            try {
+              await window.TrueNorthPlaybackStore.save(pf.track, pf.ref);
+            } catch (e) {
+              console.warn("Could not persist audio for playback:", e);
+            }
+          }
           const statusEl = document.getElementById("uploadStatus");
           if (statusEl) {
             statusEl.className = "status";
@@ -653,11 +816,18 @@ window.TrueNorthOverlayEnabled = false;
           return;
         }
 
+        const refFile = refFileInput?.files?.[0] || null;
+        uploadHandler._playbackFilesToStore =
+          mainFile && refFile ? { track: mainFile, ref: refFile } : null;
         try {
-          const refFile = refFileInput?.files?.[0] || null;
           await uploadHandler.uploadAndAnalyze(mainFile, refFile);
+          if (mainFile && refFile) {
+            attachPlaybackFromStoredBlobs(mainFile, refFile);
+          }
         } catch (err) {
           // Error already handled by onError callback
+        } finally {
+          delete uploadHandler._playbackFilesToStore;
         }
       });
     }

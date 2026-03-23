@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
     <style>
       :root {
@@ -57,6 +58,93 @@
         flex-direction: column;
       }
 
+      /* Match the dashboard/home page layout */
+      .dashboard {
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      .main-content {
+        flex: 1;
+        width: 100%;
+        overflow-y: auto;
+        background: var(--bg-primary);
+        padding-top: 72px; /* clear fixed navbar */
+      }
+
+      /* Fixed top navbar (same as home) */
+      .site-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        background: var(--bg-primary);
+        padding: 12px 24px;
+      }
+
+      .navbar-container {
+        max-width: 960px;
+        margin: 0 auto;
+        border: 1px solid var(--border);
+        padding: 12px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .navbar-brand {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 12px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-primary);
+        text-decoration: none;
+      }
+
+      .navbar-nav {
+        display: flex;
+        gap: 24px;
+        align-items: center;
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 11px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+      }
+
+      .navbar-nav a {
+        color: var(--text-secondary);
+        text-decoration: none;
+        transition: color 0.2s ease;
+      }
+
+      .navbar-nav a:hover {
+        color: var(--text-primary);
+      }
+
+      .navbar-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 11px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .navbar-actions .btn {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
       .content-header {
         padding: 16px 40px;
         background: var(--bg-primary);
@@ -86,6 +174,11 @@
         margin-bottom: 4px;
         letter-spacing: -0.02em;
         line-height: 1.2;
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 12px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
       }
 
       .content-header p {
@@ -100,15 +193,22 @@
         display: flex;
         gap: 20px;
         align-items: center;
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 11px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
       }
 
       .header-nav a {
-        font-size: 14px;
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 11px;
         font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
         color: var(--text-secondary);
         text-decoration: none;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        letter-spacing: -0.01em;
         line-height: 1.4;
         position: relative;
         padding: 4px 0;
@@ -138,14 +238,23 @@
         display: flex;
         gap: 12px;
         align-items: center;
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 11px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .header-actions .btn {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
       }
 
       .content-body {
         flex: 1;
-        padding: 60px 40px;
-        max-width: 1200px;
-        width: 100%;
-        margin: 0 auto;
+        padding: 40px;
       }
 
       .docs-header {
@@ -164,11 +273,12 @@
 
       .docs-subtitle {
         font-size: 18px;
-        color: var(--text-secondary);
+        color: var(--text-primary);
         letter-spacing: -0.01em;
         line-height: 1.5;
         max-width: 700px;
         margin: 0 auto;
+        font-family: 'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       }
 
       .feature-section {
@@ -200,21 +310,32 @@
         flex-shrink: 0;
       }
 
+      .feature-icon::after {
+        content: '';
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--accent);
+        display: block;
+      }
+
       .feature-title {
         font-size: 28px;
         font-weight: 700;
         color: var(--text-primary);
         letter-spacing: -0.02em;
         line-height: 1.2;
+        font-family: 'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       }
 
       .feature-description {
         font-size: 16px;
-        color: var(--text-secondary);
+        color: var(--text-primary);
         line-height: 1.7;
         letter-spacing: -0.01em;
         margin-bottom: 32px;
         max-width: 800px;
+        font-family: 'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       }
 
       .feature-details {
@@ -232,18 +353,33 @@
         margin-bottom: 16px;
         letter-spacing: -0.015em;
         line-height: 1.3;
+        font-family: 'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       }
 
       .feature-details p {
         font-size: 15px;
-        color: var(--text-secondary);
+        color: var(--text-primary);
         line-height: 1.7;
         letter-spacing: -0.01em;
         margin-bottom: 20px;
+        font-family: 'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       }
 
       .feature-details p:last-child {
         margin-bottom: 0;
+      }
+
+      .feature-doc-pre {
+        white-space: normal;
+        margin: 0;
+        font-family: inherit;
+        font-size: 15px;
+        color: var(--text-primary);
+        line-height: 1.7;
+        letter-spacing: -0.01em;
+        font-family: 'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        width: 100%;
+        max-width: none;
       }
 
       .feature-list {
@@ -254,13 +390,14 @@
 
       .feature-list li {
         font-size: 15px;
-        color: var(--text-secondary);
+        color: var(--text-primary);
         line-height: 1.7;
         letter-spacing: -0.01em;
         padding: 12px 0;
         padding-left: 24px;
         position: relative;
         border-bottom: 1px solid var(--border);
+        font-family: 'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       }
 
       .feature-list li:last-child {
@@ -324,23 +461,7 @@
       /* Responsive */
       @media (max-width: 768px) {
         .content-body {
-          padding: 40px 24px;
-        }
-
-        .content-header {
           padding: 24px;
-        }
-
-        .header-top {
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 16px;
-        }
-
-        .header-nav {
-          gap: 20px;
-          flex-wrap: wrap;
-          justify-content: center;
         }
 
         .docs-title {
@@ -358,71 +479,120 @@
         .feature-details {
           padding: 24px;
         }
+
+        .site-header {
+          padding: 10px 16px;
+        }
+
+        .navbar-container {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .main-content {
+          padding-top: 64px;
+        }
       }
     </style>
   </head>
   <body>
-    <div class="page-container">
-      <!-- Header -->
-      <div class="content-header">
-        <div class="header-top">
-          <div class="header-left">
-            <h1><a href="index.html" style="text-decoration: none; color: inherit;">Mix Affinity</a></h1>
-            <p>Audio Analysis Documentation</p>
-          </div>
-          <div class="header-actions">
-            <a href="index.html" class="btn btn-secondary">Back to Dashboard</a>
-          </div>
-        </div>
-        <nav class="header-nav">
-          <a href="index.html">Home</a>
-          <a href="docs.html" style="color: var(--text-primary);">Documentation</a>
-          <a href="#pricing">Pricing</a>
-          <a href="#about">About Us</a>
-        </nav>
-      </div>
-
+    <div class="dashboard">
       <!-- Main Content -->
-      <div class="content-body">
-        <div class="docs-header">
-          <h1 class="docs-title">Documentation</h1>
-          <p class="docs-subtitle">
-            Comprehensive guide to all features and capabilities of Mix Affinity. 
-            Learn how to analyze your audio and interpret the results.
-          </p>
-        </div>
+      <main class="main-content">
+        <header class="site-header">
+          <div class="navbar-container">
+            <a href="index.html" class="navbar-brand">Mix Affinity</a>
+            <nav class="navbar-nav">
+              <a href="docs.html">Documentation</a>
+              <a href="#pricing">Pricing</a>
+              <a href="#about">About Us</a>
+            </nav>
+            <div class="navbar-actions">
+              <button class="btn btn-secondary">Sign Up</button>
+              <button class="btn btn-primary">Login</button>
+            </div>
+          </div>
+        </header>
 
+        <div class="content-body">
         <!-- Spatial Fingerprint -->
         <section id="spatial-fingerprint" class="feature-section">
           <div class="feature-header">
-            <div class="feature-icon">📍</div>
+            <div class="feature-icon" aria-hidden="true"></div>
             <h2 class="feature-title">Spatial Fingerprint</h2>
           </div>
-          <p class="feature-description">
-            The Spatial Fingerprint visualization provides a comprehensive view of how audio events are positioned 
-            in the stereo field and their perceptual presence. This feature helps you understand the spatial 
-            characteristics of your mix at a glance.
-          </p>
           <div class="feature-details">
-            <h3>Understanding the Visualization</h3>
+            <h3>Understanding the Spatial Fingerprint</h3>
             <p>
-              The Spatial Fingerprint displays each audio event as a point on a two-dimensional plane. 
-              The X-axis represents the stereo field (left to right balance), while the Y-axis represents 
-              the presence or forwardness of the event in the mix.
+              The Spatial Fingerprint is built to show where a mix makes its strongest spatial statements.
+              Rather than plotting every sound that exists in a track, it highlights the moments where the mix
+              clearly asserts itself - the points where energy, placement, and clarity combine to create a
+              noticeable spatial impression.
             </p>
-            <h3>Key Features</h3>
-            <ul class="feature-list">
-              <li>Interactive region selection: Click and drag to select areas of interest</li>
-              <li>Frequency emphasis visualization: Color coding shows low, mid, and high frequency dominance</li>
-              <li>Track vs Reference comparison: Toggle between your track and reference to spot differences</li>
-              <li>Statistical analysis: View counts and averages for selected regions</li>
-              <li>Time-based filtering: Use the time scrubber to focus on specific sections</li>
-            </ul>
-            <h3>How to Use</h3>
             <p>
-              Upload your main track and optionally a reference track. After analysis, the Spatial Fingerprint 
-              will display all detected audio events. Select regions to see detailed statistics, and compare 
-              your mix against the reference to identify spatial differences.
+              Each dot represents a perceptually important moment. These are typically transient-anchored events
+              such as vocal syllables, drum hits, guitar attacks, piano notes, or any element that naturally
+              pulls listener focus. By concentrating on these moments, the fingerprint provides a meaningful
+              snapshot of the mix's spatial decisions over time.
+            </p>
+
+            <h3>Why some sounds do not appear on the graph</h3>
+            <p>
+              Music often contains continuous textures: reverb tails, ambient pads, stereo wash, room tone,
+              chorus effects, and other sustained layers. These sounds shape the emotional atmosphere of a
+              recording, but because they evolve gradually and lack clear transient definition, they do not
+              always register as dominant analysis events.
+            </p>
+            <p>
+              If every continuous sound were plotted, the visualization would quickly become a dense cloud
+              of points with no clear structure. The Spatial Fingerprint intentionally avoids this by focusing
+              on perceptual salience rather than constant signal activity.
+            </p>
+            <p>
+              A useful mindset: a dot does not mean there is sound here - it means the mix made a spatial
+              decision here.
+            </p>
+
+            <h3>Understanding glow (spatial bloom)</h3>
+            <p>
+              Some points appear with a soft glow. This indicates that sound energy continues to expand after
+              the initial impact. In practical terms, glowing points often correspond to reverb tails, room
+              decay, stereo delay reflections, or sustained harmonic bloom.
+            </p>
+            <p>
+              Glow does not represent loudness or width by itself. Instead, it reflects how long sound energy
+              persists after the transient. Dry, tight sounds typically produce solid dots, while more
+              atmospheric or spacious moments produce glowing ones.
+            </p>
+
+            <h3>Using Region Stats</h3>
+            <p>
+              The Region Stats panel allows you to click and drag across the visualization to study a focused
+              area of the mix. This provides a deeper layer of insight by summarizing the spatial behavior of
+              selected moments.
+            </p>
+            <ul class="feature-list">
+              <li><strong>Artifact Count:</strong> Number of perceptually dominant events in the selected region.</li>
+              <li><strong>Relative Density:</strong> Percent of total events in the selected region.</li>
+              <li><strong>Frequency Mix:</strong> Low/mid/high dominance balance among selected events.</li>
+              <li><strong>Mean Presence:</strong> Average perceptual intensity of events in that region.</li>
+              <li><strong>Stereo Bias:</strong> Average left-right positioning tendency of selected events.</li>
+              <li><strong>Mean Wetness:</strong> Average spatial decay character (ambience and bloom).</li>
+            </ul>
+
+            <h3>Interpreting sparse vs dense fingerprints</h3>
+            <p>
+              A sparse fingerprint does not mean a mix lacks detail. It often indicates arrangements that rely
+              on atmosphere, sustain, or gradual dynamic build. Dense clusters often reflect productions with
+              strong transient definition and deliberate placement choices.
+            </p>
+
+            <h3>Getting the most value</h3>
+            <p>
+              Use the fingerprint alongside loudness, crest factor, and low-end analysis to build a complete
+              picture of how your mix behaves. The goal is not to replace listening, but to support it. Over
+              time, you will begin to recognize visual patterns that correspond to mixes that feel punchy,
+              wide, intimate, or atmospheric.
             </p>
           </div>
         </section>
@@ -430,7 +600,7 @@
         <!-- Loudness Analysis -->
         <section id="loudness-analysis" class="feature-section">
           <div class="feature-header">
-            <div class="feature-icon">🔊</div>
+            <div class="feature-icon" aria-hidden="true"></div>
             <h2 class="feature-title">Loudness Analysis</h2>
           </div>
           <p class="feature-description">
@@ -465,7 +635,7 @@
         <!-- Crest Factor -->
         <section id="crest-factor" class="feature-section">
           <div class="feature-header">
-            <div class="feature-icon">📊</div>
+            <div class="feature-icon" aria-hidden="true"></div>
             <h2 class="feature-title">Crest Factor</h2>
           </div>
           <p class="feature-description">
@@ -500,7 +670,7 @@
         <!-- Low End Analysis -->
         <section id="low-end-analysis" class="feature-section">
           <div class="feature-header">
-            <div class="feature-icon">🎵</div>
+            <div class="feature-icon" aria-hidden="true"></div>
             <h2 class="feature-title">Low End Analysis</h2>
           </div>
           <p class="feature-description">
@@ -534,7 +704,7 @@
         <!-- Getting Started -->
         <section class="feature-section">
           <div class="feature-header">
-            <div class="feature-icon">🚀</div>
+            <div class="feature-icon" aria-hidden="true"></div>
             <h2 class="feature-title">Getting Started</h2>
           </div>
           <p class="feature-description">
@@ -560,6 +730,7 @@
           </div>
         </section>
       </div>
-    </div>
+    </main>
+  </div>
   </body>
 </html>

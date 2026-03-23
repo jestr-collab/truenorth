@@ -40,3 +40,16 @@ curl -X POST http://localhost:8000/spatial-fingerprint \
 ```
 
 Reference file is optional; omit the `-F "ref_file=..."` line to send only the main track.
+
+## GitHub Pages (static site)
+
+1. In the repo on GitHub: **Settings → Pages**.
+2. **Build and deployment → Source:** Deploy from a branch.
+3. Branch: **main**, folder: **/ (root)**.
+4. The site root serves `index.html`, which redirects to **`viz/index.html`** (upload + dashboard). Analysis still calls your hosted API (e.g. Render); set the API base in the app as usual.
+
+**URLs**
+
+- `https://<user>.github.io/<repo>/` → redirect → `viz/index.html`
+- Viz dashboard: `https://<user>.github.io/<repo>/viz/index.html`
+- After analysis: `https://<user>.github.io/<repo>/viz/viz.html`

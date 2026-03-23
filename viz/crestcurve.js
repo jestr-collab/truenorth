@@ -1,6 +1,7 @@
 // crestcurve.js
 (function () {
   const NAME = "crest";
+  let crestTransportListener = null;
 
   function getMode(ctx) {
     // 1) explicit global override (easy debug)
@@ -107,11 +108,35 @@
     const refPts = extractPoints(data, "reference");
     const pts = mode === "reference" ? refPts : trackPts;
 
-    // label what we’re showing (helps debugging)
-    g.append("text")
-      .attr("x", 0)
-      .attr("y", -6)
-      .text(`Crest Factor (dB) over time — ${mode === "reference" ? "Reference" : "Track"}`);
+    const trackObj = data?.track ?? null;
+    const refObj = data?.reference ?? null;
+    const trackName =
+      trackObj?.meta?.filename ??
+      trackObj?.filename ??
+      trackObj?.name ??
+      "—";
+    const refName =
+      refObj?.meta?.filename ??
+      refObj?.filename ??
+      refObj?.name ??
+      "—";
+
+    function truncateTitle(label, maxLen = 40) {
+      if (typeof label !== "string") return label;
+      if (label.length <= maxLen) return label;
+      const keep = maxLen - 3;
+      const front = Math.ceil(keep * 0.6);
+      const back = keep - front;
+      return label.slice(0, front) + "..." + label.slice(-back);
+    }
+
+    function setGraphTitle() {
+      const el = document.getElementById(ctx?.titleId || "title");
+      if (!el) return;
+      const raw = mode === "reference" ? `Reference: ${refName}` : `Track: ${trackName}`;
+      el.textContent = truncateTitle(raw, 40);
+    }
+    setGraphTitle();
 
     // Compute domains from BOTH track and reference combined (scale locking for A/B comparison)
     const allTimes = [...trackPts.map(d => d.t), ...refPts.map(d => d.t)];
@@ -197,6 +222,22 @@
     // axes groups
     const gx = g.append("g").attr("transform", `translate(0,${innerH})`);
     const gy = g.append("g");
+    g.append("text")
+      .attr("class", "label")
+      .attr("transform", "rotate(-90)")
+      .attr("x", -innerH / 2)
+      .attr("y", -44)
+      .attr("text-anchor", "middle")
+      .text("Decibels");
+    const playhead = g
+      .append("line")
+      .attr("stroke", "rgba(45,139,122,0.55)")
+      .attr("stroke-width", 1)
+      .attr("x1", 0)
+      .attr("x2", 0)
+      .attr("y1", 0)
+      .attr("y2", innerH)
+      .attr("opacity", 0);
 
     // Function to redraw with current x domain
     function redraw() {
@@ -250,6 +291,12 @@
 
       // Filter points to visible x domain range
       const [xMin, xMax] = x.domain();
+      const tPlay = Number(window.TrueNorthTransport?.currentTimeSec ?? NaN);
+      if (Number.isFinite(tPlay)) {
+        playhead.attr("x1", x(tPlay)).attr("x2", x(tPlay)).attr("opacity", tPlay >= xMin && tPlay <= xMax ? 1 : 0);
+      } else {
+        playhead.attr("opacity", 0);
+      }
       const visiblePts = pts.filter(d => d.t >= xMin && d.t <= xMax);
 
       // Draw axes with time formatting
@@ -271,7 +318,6 @@
         .style("pointer-events", "none")
         .attr("d", line);
     }
-
     if (!pts.length) {
       redraw();
       return;
@@ -414,11 +460,13 @@
 
         showTip(event, d, mode === "reference" ? "Reference" : "Track");
       })
-      .on("mouseleave", hideTip);
+      .on("mouseleave", hideTip)
+      .on("click", function (event) {
+        const [mx] = d3.pointer(event, this);
+        const t = x.invert(mx);
+        window.dispatchEvent(new CustomEvent("tn:transport-seek-request", { detail: { seconds: t } }));
+      });
 
-    // Hide time scrubber (using pinch-to-zoom instead)
-    const timeRow = document.getElementById(ctx?.timeRowId || "timeRow");
-    if (timeRow) timeRow.style.display = "none";
 
     // Set up D3 zoom behavior (supports trackpad pinch gestures)
     // currentMouseX and hoverDotTime are already declared above with tooltip
@@ -496,6 +544,10 @@
         redraw();
       });
 
+    if (crestTransportListener) window.removeEventListener("tn:transport-time", crestTransportListener);
+    crestTransportListener = () => redraw();
+    window.addEventListener("tn:transport-time", crestTransportListener);
+
     // Apply zoom to overlay first
     overlay.call(zoom);
 
@@ -510,8 +562,10 @@
   window.TrueNorthVizzes[NAME] = {
     mount,
     unmount() {
-      // Crest is mount-only and doesn't add listeners or persistent DOM.
-      // This method exists for API consistency with other vizzes.
+      if (crestTransportListener) {
+        window.removeEventListener("tn:transport-time", crestTransportListener);
+        crestTransportListener = null;
+      }
     }
   };
 })();

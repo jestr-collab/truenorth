@@ -63,7 +63,7 @@
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
       // ---------- state ----------
-      let mode = "track"; // "track" | "ref"
+      let mode = window.TrueNorthVizMode === "reference" ? "ref" : "track";
       let trackCurve = [];
       let refCurve = [];
 
@@ -209,6 +209,16 @@
 
       const hoverDot = g.append("circle").attr("r", 4.2).attr("opacity", 0);
 
+      const playhead = g
+        .append("line")
+        .attr("stroke", "rgba(45,139,122,0.55)")
+        .attr("stroke-width", 1)
+        .attr("x1", 0)
+        .attr("x2", 0)
+        .attr("y1", 0)
+        .attr("y2", innerH)
+        .attr("opacity", 0);
+
       const overlay = g
         .append("rect")
         .attr("width", innerW)
@@ -294,6 +304,17 @@
 
         path.attr("d", line(visibleCurve));
         areaPath.attr("d", area(visibleCurve));
+
+        const tPlay = Number(window.TrueNorthTransport?.currentTimeSec ?? NaN);
+        if (Number.isFinite(tPlay)) {
+          const [xMin2, xMax2] = x.domain();
+          playhead
+            .attr("x1", x(tPlay))
+            .attr("x2", x(tPlay))
+            .attr("opacity", tPlay >= xMin2 && tPlay <= xMax2 ? 1 : 0);
+        } else {
+          playhead.attr("opacity", 0);
+        }
       }
 
       // nearest point
@@ -382,31 +403,28 @@
           hoverDotTime = d.t_s;
           showTip(event, d, mode === "ref" ? "Reference" : "Track");
         })
-        .on("mouseleave", hideTip);
+        .on("mouseleave", hideTip)
+        .on("click", function (event) {
+          const [mx] = d3.pointer(event, this);
+          const t = x.invert(mx);
+          window.dispatchEvent(new CustomEvent("tn:transport-seek-request", { detail: { seconds: t } }));
+        });
 
-      // controls
-      const btnTrack = document.getElementById(ctx.btnTrackId);
-      const btnRef = document.getElementById(ctx.btnRefId);
-
-      if (btnTrack)
-        btnTrack.onclick = () => {
-          mode = "track";
-          setTitle();
-          render(trackCurve);
-        };
-      if (btnRef)
-        btnRef.onclick = () => {
-          mode = "ref";
-          setTitle();
-          render(refCurve);
-        };
-
-      // store cleanup ref
+      // store cleanup ref (before viz-mode listener uses it)
       this.__tn_loud_state = {};
 
-      // Hide time scrubber (using pinch-to-zoom instead)
-      const timeRow = document.getElementById(ctx.timeRowId);
-      if (timeRow) timeRow.style.display = "none";
+      const onVizMode = (ev) => {
+        const m = ev.detail?.mode;
+        if (m === "reference") mode = "ref";
+        else if (m === "track") mode = "track";
+        else return;
+        setTitle();
+        render(mode === "ref" ? refCurve : trackCurve);
+      };
+      window.addEventListener("tn:viz-mode", onVizMode);
+      this.__tn_loud_state.onVizMode = onVizMode;
+
+
 
       // Set up D3 zoom behavior (supports trackpad pinch gestures)
       // Track current mouse position and hover dot time for focal point zooming
@@ -502,11 +520,28 @@
       // Store zoom reference for cleanup
       this.__tn_loud_state.zoom = zoom;
 
+      const onTransportTime = () => {
+        const curve = mode === "ref" ? refCurve : trackCurve;
+        render(curve);
+      };
+      window.addEventListener("tn:transport-time", onTransportTime);
+      this.__tn_loud_state.onTransportTime = onTransportTime;
+
       setTitle();
       render(trackCurve);
     },
 
     unmount() {
+      if (this.__tn_loud_state?.onTransportTime) {
+        window.removeEventListener("tn:transport-time", this.__tn_loud_state.onTransportTime);
+      }
+      if (this.__tn_loud_state?.onVizMode) {
+        window.removeEventListener("tn:viz-mode", this.__tn_loud_state.onVizMode);
+      }
+      const _btnT = document.getElementById("btnTrack");
+      const _btnR = document.getElementById("btnRef");
+      if (_btnT) _btnT.onclick = null;
+      if (_btnR) _btnR.onclick = null;
       this.__tn_loud_state = null;
 
       // show scrubber again for other vizzes
